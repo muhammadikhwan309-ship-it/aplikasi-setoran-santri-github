@@ -92,6 +92,40 @@ app.get("/api/dashboard", (req, res) => {
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+// ============ OTOMATIS BUAT TABEL JIKA BELUM ADA ============
+const initDB = () => {
+    const tableSantri = `
+        CREATE TABLE IF NOT EXISTS data_santri (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nama_santri VARCHAR(255) NOT NULL,
+            nomor_wa_orangtua VARCHAR(20) NOT NULL
+        );`;
+    
+    const tableSetoran = `
+        CREATE TABLE IF NOT EXISTS setoran (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nama VARCHAR(255) NOT NULL,
+            nomor_wa VARCHAR(20) NOT NULL,
+            surah VARCHAR(100),
+            ayat VARCHAR(50),
+            nilai INT,
+            keterangan TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );`;
+
+    db.query(tableSantri, (err) => {
+        if (err) console.error("Gagal buat tabel santri:", err);
+        else console.log("Tabel santri siap!");
+    });
+
+    db.query(tableSetoran, (err) => {
+        if (err) console.error("Gagal buat tabel setoran:", err);
+        else console.log("Tabel setoran siap!");
+    });
+};
+
+// Jalankan fungsi buat tabel
+initDB();
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
