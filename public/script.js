@@ -230,39 +230,69 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     
     // ============ DASHBOARD ============
-    async function loadDashboard() {
+  async function loadDashboard() {
+    try {
+        const res = await fetch(`${BASE_URL}/api/dashboard`);
+        const data = await res.json();
+        
+        const tbody = document.getElementById("dashboardBody");
+        if (tbody) {
+            tbody.innerHTML = "";
+            if (data.length === 0) {
+                // Jangan lupa colspan jadi 8 karena kita tambah 1 kolom Aksi
+                tbody.innerHTML = '<tr><td colspan="8">Belum ada data setoran</td></tr>';
+            } else {
+                data.forEach((item, i) => {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).innerHTML = i + 1;
+                    row.insertCell(1).innerHTML = item.nama;
+                    row.insertCell(2).innerHTML = item.total_setoran;
+                    row.insertCell(3).innerHTML = item.rata_rata;
+                    row.insertCell(4).innerHTML = item.nilai_tertinggi;
+                    row.insertCell(5).innerHTML = item.nilai_terendah;
+                    
+                    let predikat = "";
+                    if (item.rata_rata >= 85) predikat = "🏆 Sangat Baik";
+                    else if (item.rata_rata >= 70) predikat = "👍 Baik";
+                    else if (item.rata_rata >= 60) predikat = "📖 Cukup";
+                    else predikat = "⚠️ Kurang";
+                    row.insertCell(6).innerHTML = predikat;
+                    
+                    // --- TAMBAHKAN KOLOM AKSI (HAPUS) ---
+                    const aksiCell = row.insertCell(7);
+                    aksiCell.innerHTML = `
+                        <button onclick="hapusTotalSetoran('${item.nama}')" 
+                                style="background:#ff4d4d; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">
+                            🗑️ Hapus
+                        </button>
+                    `;
+                    
+                    if (i === 0) row.style.background = "#fef3c7";
+                });
+            }
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// FUNGSI UNTUK EKSEKUSI HAPUS (Taruh di bawah loadDashboard)
+async function hapusTotalSetoran(nama) {
+    if (confirm(`Hapus SELURUH riwayat setoran untuk santri: ${nama}?`)) {
         try {
-            const res = await fetch(`${BASE_URL}/api/dashboard`);
-            const data = await res.json();
-            
-            const tbody = document.getElementById("dashboardBody");
-            if (tbody) {
-                tbody.innerHTML = "";
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7">Belum ada data setoran</td></tr>';
-                } else {
-                    data.forEach((item, i) => {
-                        const row = tbody.insertRow();
-                        row.insertCell(0).innerHTML = i + 1;
-                        row.insertCell(1).innerHTML = item.nama;
-                        row.insertCell(2).innerHTML = item.total_setoran;
-                        row.insertCell(3).innerHTML = item.rata_rata;
-                        row.insertCell(4).innerHTML = item.nilai_tertinggi;
-                        row.insertCell(5).innerHTML = item.nilai_terendah;
-                        let predikat = "";
-                        if (item.rata_rata >= 85) predikat = "🏆 Sangat Baik";
-                        else if (item.rata_rata >= 70) predikat = "👍 Baik";
-                        else if (item.rata_rata >= 60) predikat = "📖 Cukup";
-                        else predikat = "⚠️ Kurang";
-                        row.insertCell(6).innerHTML = predikat;
-                        if (i === 0) row.style.background = "#fef3c7";
-                    });
-                }
+            const res = await fetch(`${BASE_URL}/api/dashboard/hapus/${encodeURIComponent(nama)}`, { 
+                method: "DELETE" 
+            });
+            if (res.ok) {
+                alert("Berhasil menghapus semua setoran santri tersebut.");
+                loadDashboard(); // Segarkan tampilan dashboard
             }
         } catch (err) {
-            console.error(err);
+            alert("Gagal menghapus data");
         }
     }
+}
+
     
     // ============ TAMBAH SANTRI ============
     const tambahBtn = document.getElementById("tambahSantriBtn");
