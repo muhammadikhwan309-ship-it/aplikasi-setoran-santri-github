@@ -4,6 +4,28 @@ const BASE_URL = window.location.origin
 // ============ GLOBAL VARIABLES ============
 let daftarSantri = [];
 
+// ============ FUNGSI HAPUS TOTAL SETORAN (GLOBAL - DILUAR DOMContentLoaded) ============
+async function hapusTotalSetoran(nama) {
+    if (confirm(`Hapus SELURUH riwayat setoran untuk santri: ${nama}?`)) {
+        try {
+            const res = await fetch(`${BASE_URL}/api/dashboard/hapus/${encodeURIComponent(nama)}`, { 
+                method: "DELETE" 
+            });
+            if (res.ok) {
+                alert("Berhasil menghapus semua setoran santri tersebut.");
+                // Panggil loadDashboard dari global scope
+                if (typeof loadDashboardGlobal === 'function') {
+                    loadDashboardGlobal();
+                }
+            } else {
+                alert("Gagal menghapus data");
+            }
+        } catch (err) {
+            alert("Gagal menghapus data");
+        }
+    }
+}
+
 // ============ TUNGGU HTML SIAP ============
 document.addEventListener("DOMContentLoaded", function() {
     
@@ -168,10 +190,10 @@ document.addEventListener("DOMContentLoaded", function() {
     // ============ LOAD SETORAN ============
     const filterSantri = document.getElementById("filterSantri");
     const filterSurah = document.getElementById("filterSurah");
-    const filterTglMulai = document.getElementById("filterTglMulai");
-    const filterTglSampai = document.getElementById("filterTglSampai");
+    const filterTglMulai = document.getElementById("filterTanggalMulai");
+    const filterTglSampai = document.getElementById("filterTanggalSampai");
     const btnFilter = document.getElementById("btnFilter");
-    const btnReset = document.getElementById("btnReset");
+    const btnReset = document.getElementById("btnResetFilter");
     
     async function loadSetoran() {
         try {
@@ -188,7 +210,7 @@ document.addEventListener("DOMContentLoaded", function() {
             if (tbody) {
                 tbody.innerHTML = "";
                 if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6">Tidak ada数据</tr>';
+                    tbody.innerHTML = '<tr><td colspan="6">Tidak ada data</td></tr>';
                 } else {
                     data.forEach(item => {
                         const row = tbody.insertRow();
@@ -229,23 +251,6 @@ document.addEventListener("DOMContentLoaded", function() {
         };
     }
     
-    // ============ FUNGSI HAPUS TOTAL SETORAN (DIPINDAH KE ATAS SEBELUM loadDashboard) ============
-    async function hapusTotalSetoran(nama) {
-        if (confirm(`Hapus SELURUH riwayat setoran untuk santri: ${nama}?`)) {
-            try {
-                const res = await fetch(`${BASE_URL}/api/dashboard/hapus/${encodeURIComponent(nama)}`, { 
-                    method: "DELETE" 
-                });
-                if (res.ok) {
-                    alert("Berhasil menghapus semua setoran santri tersebut.");
-                    loadDashboard(); // Segarkan tampilan dashboard
-                }
-            } catch (err) {
-                alert("Gagal menghapus data");
-            }
-        }
-    }
-    
     // ============ DASHBOARD ============
     async function loadDashboard() {
         try {
@@ -256,7 +261,7 @@ document.addEventListener("DOMContentLoaded", function() {
             if (tbody) {
                 tbody.innerHTML = "";
                 if (data.length === 0) {
-                    tbody.innerHTML = '<table><td colspan="8">Belum ada data setoran</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8">Belum ada data setoran</td></tr>';
                 } else {
                     data.forEach((item, i) => {
                         const row = tbody.insertRow();
@@ -274,10 +279,11 @@ document.addEventListener("DOMContentLoaded", function() {
                         else predikat = "⚠️ Kurang";
                         row.insertCell(6).innerHTML = predikat;
                         
-                        // Kolom Aksi (HAPUS)
+                        // Kolom Aksi (HAPUS) - panggil fungsi global
                         const aksiCell = row.insertCell(7);
+                        const safeNama = item.nama.replace(/'/g, "\\'");
                         aksiCell.innerHTML = `
-                            <button onclick="hapusTotalSetoran('${item.nama.replace(/'/g, "\\'")}')" 
+                            <button onclick="hapusTotalSetoran('${safeNama}')" 
                                     style="background:#ff4d4d; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">
                                 🗑️ Hapus
                             </button>
@@ -291,6 +297,9 @@ document.addEventListener("DOMContentLoaded", function() {
             console.error(err);
         }
     }
+    
+    // Expose loadDashboard ke global agar bisa dipanggil dari hapusTotalSetoran
+    window.loadDashboardGlobal = loadDashboard;
     
     // ============ TAMBAH SANTRI ============
     const tambahBtn = document.getElementById("tambahSantriBtn");
