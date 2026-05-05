@@ -123,6 +123,14 @@ const initDB = () => {
         else console.log("Tabel setoran siap!");
     });
 };
+// API untuk menghapus 1 data setoran spesifik dari dashboard
+app.delete("/api/setoran/:id", (req, res) => {
+    const { id } = req.params;
+    db.query("DELETE FROM setoran WHERE id = ?", [id], (err, result) => {
+        if (err) return res.status(500).json({ message: "Gagal menghapus data" });
+        res.json({ message: "Data setoran berhasil dihapus" });
+    });
+});
 
 // Jalankan fungsi buat tabel
 initDB();
