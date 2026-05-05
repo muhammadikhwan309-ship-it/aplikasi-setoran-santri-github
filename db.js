@@ -5,17 +5,19 @@ const db = mysql.createConnection({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    port: process.env.DB_PORT || 3306,
+    port: process.env.DB_PORT || 19436,
+    // INI WAJIB ADA UNTUK AIVEN:
     ssl: {
-        rejectUnauthorized: false // Penting untuk koneksi ke Aiven
-    }
+        rejectUnauthorized: false
+    },
+    connectTimeout: 20000 // Tunggu 20 detik sebelum menyerah
 });
 
 db.connect((err) => {
     if (err) {
-        console.error('Koneksi Database Gagal:', err.message);
+        console.error('Koneksi Database Gagal total:', err.message);
     } else {
-        console.log('Mantap! Database Aiven Terhubung.');
+        console.log('ALHAMDULILLAH! Database Aiven Terhubung.');
     }
 });
 
