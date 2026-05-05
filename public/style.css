@@ -190,3 +190,116 @@ th {
         width: 95%;
     }
 }
+/* Global Reset */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f4f7f6;
+    color: #333;
+    line-height: 1.6;
+    padding: 10px;
+}
+
+/* Container Utama */
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+}
+
+/* Navigasi Tab - Biar nggak numpuk */
+.tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    overflow-x: auto; /* Biar bisa geser kalau kebesaran */
+    padding-bottom: 10px;
+}
+
+.tabs button {
+    flex: 1;
+    padding: 10px 5px;
+    border: none;
+    background: #eee;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.tabs button.active {
+    background: #27ae60;
+    color: white;
+}
+
+/* Form Styling - Biar Full Width di HP */
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn-primary { background: #27ae60; color: white; }
+.btn-danger { background: #e74c3c; color: white; margin-top: 10px; }
+
+/* Tabel Responsive - Ini Rahasianya */
+.table-container {
+    overflow-x: auto; /* Biar bisa digeser ke samping */
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+th, td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+}
+
+th { background: #f8f9fa; color: #666; }
+
+/* Aksi Tombol di Tabel */
+.edit-btn { background: #f39c12; color: white; padding: 5px 10px; font-size: 0.7rem; width: auto; margin-right: 5px;}
+.delete-btn { background: #e74c3c; color: white; padding: 5px 10px; font-size: 0.7rem; width: auto;}
+
+/* Card Style untuk Dashboard */
+.card {
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 5px solid #27ae60;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
