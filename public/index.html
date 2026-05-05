@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Setoran Quran</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>📚 Aplikasi Setoran Madrasah Quran</h1>
+
+        <div class="tab">
+            <button id="tabSetoranBtn" class="active">📖 Setoran Quran</button>
+            <button id="tabSantriBtn">👨‍🎓 Data Santri</button>
+            <button id="tabDashboardBtn">📊 Dashboard</button>
+        </div>
+
+        <!-- TAB SETORAN -->
+        <div id="tabSetoran" class="tab-content active">
+            <div class="form-box">
+                <div class="subtitle">📝 Form Setoran</div>
+                
+                <select id="pilihSantri">
+                    <option value="">-- Pilih Nama Santri --</option>
+                </select>
+                
+                <select id="surah">
+                    <option value="">Pilih Surah</option>
+                    <option value="An-Naba">An-Naba</option>
+                    <option value="An-Naziat">An-Naziat</option>
+                    <option value="Abasa">Abasa</option>
+                    <option value="At-Takwir">At-Takwir</option>
+                    <option value="Al-Infitar">Al-Infitar</option>
+                    <option value="Al-Mutaffifin">Al-Mutaffifin</option>
+                    <option value="Al-Insyiqaq">Al-Insyiqaq</option>
+                    <option value="Al-Buruj">Al-Buruj</option>
+                    <option value="At-Tariq">At-Tariq</option>
+                    <option value="Al-Ala">Al-Ala</option>
+                    <option value="Al-Ghasyiyah">Al-Ghasyiyah</option>
+                    <option value="Al-Fajr">Al-Fajr</option>
+                    <option value="Al-Balad">Al-Balad</option>
+                    <option value="Asy-Syams">Asy-Syams</option>
+                    <option value="Al-Lail">Al-Lail</option>
+                    <option value="Ad-Duha">Ad-Duha</option>
+                    <option value="Asy-Syarh">Asy-Syarh</option>
+                    <option value="At-Tin">At-Tin</option>
+                    <option value="Al-Alaq">Al-Alaq</option>
+                    <option value="Al-Qadr">Al-Qadr</option>
+                    <option value="Al-Bayyinah">Al-Bayyinah</option>
+                    <option value="Az-Zalzalah">Az-Zalzalah</option>
+                    <option value="Al-Adiyat">Al-Adiyat</option>
+                    <option value="Al-Qariah">Al-Qariah</option>
+                    <option value="At-Takasur">At-Takasur</option>
+                    <option value="Al-Asr">Al-Asr</option>
+                    <option value="Al-Humazah">Al-Humazah</option>
+                    <option value="Al-Fil">Al-Fil</option>
+                    <option value="Quraisy">Quraisy</option>
+                    <option value="Al-Maun">Al-Maun</option>
+                    <option value="Al-Kausar">Al-Kausar</option>
+                    <option value="Al-Kafirun">Al-Kafirun</option>
+                    <option value="An-Nasr">An-Nasr</option>
+                    <option value="Al-Lahab">Al-Lahab</option>
+                    <option value="Al-Ikhlas">Al-Ikhlas</option>
+                    <option value="Al-Falaq">Al-Falaq</option>
+                    <option value="An-Nas">An-Nas</option>
+                </select>
+
+                <input type="text" id="ayat" placeholder="Ayat (contoh: 1-5 atau 1,2,3)">
+                <input type="number" id="nilai" placeholder="Nilai (0-100)">
+
+                <button id="saveBtn">💾 Simpan & Kirim ke WhatsApp</button>
+            </div>
+
+         <div class="table-box">
+    <div class="subtitle">📋 Riwayat Setoran</div>
+    
+    <!-- FORM FILTER -->
+    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+        <select id="filterSantri" style="width: auto; flex: 1; min-width: 120px;">
+            <option value="">Semua Santri</option>
+        </select>
+        <select id="filterSurah" style="width: auto; flex: 1; min-width: 120px;">
+            <option value="">Semua Surah</option>
+            <option value="An-Naba">An-Naba</option>
+            <option value="An-Naziat">An-Naziat</option>
+            <option value="Abasa">Abasa</option>
+            <option value="At-Takwir">At-Takwir</option>
+            <option value="Al-Infitar">Al-Infitar</option>
+            <option value="Al-Mutaffifin">Al-Mutaffifin</option>
+            <option value="Al-Insyiqaq">Al-Insyiqaq</option>
+            <option value="Al-Buruj">Al-Buruj</option>
+            <option value="At-Tariq">At-Tariq</option>
+            <option value="Al-Ala">Al-Ala</option>
+            <option value="Al-Ghasyiyah">Al-Ghasyiyah</option>
+            <option value="Al-Fajr">Al-Fajr</option>
+            <option value="Al-Balad">Al-Balad</option>
+            <option value="Asy-Syams">Asy-Syams</option>
+            <option value="Al-Lail">Al-Lail</option>
+            <option value="Ad-Duha">Ad-Duha</option>
+            <option value="Asy-Syarh">Asy-Syarh</option>
+            <option value="At-Tin">At-Tin</option>
+            <option value="Al-Alaq">Al-Alaq</option>
+            <option value="Al-Qadr">Al-Qadr</option>
+            <option value="Al-Bayyinah">Al-Bayyinah</option>
+            <option value="Az-Zalzalah">Az-Zalzalah</option>
+            <option value="Al-Adiyat">Al-Adiyat</option>
+            <option value="Al-Qariah">Al-Qariah</option>
+            <option value="At-Takasur">At-Takasur</option>
+            <option value="Al-Asr">Al-Asr</option>
+            <option value="Al-Humazah">Al-Humazah</option>
+            <option value="Al-Fil">Al-Fil</option>
+            <option value="Quraisy">Quraisy</option>
+            <option value="Al-Maun">Al-Maun</option>
+            <option value="Al-Kausar">Al-Kausar</option>
+            <option value="Al-Kafirun">Al-Kafirun</option>
+            <option value="An-Nasr">An-Nasr</option>
+            <option value="Al-Lahab">Al-Lahab</option>
+            <option value="Al-Ikhlas">Al-Ikhlas</option>
+            <option value="Al-Falaq">Al-Falaq</option>
+            <option value="An-Nas">An-Nas</option>
+        </select>
+        <input type="date" id="filterTanggalMulai" placeholder="Dari tanggal" style="width: auto; flex: 1;">
+        <input type="date" id="filterTanggalSampai" placeholder="Sampai tanggal" style="width: auto; flex: 1;">
+        <button id="btnFilter" style="background: #14532d; padding: 8px 16px; width: auto; margin: 0;">🔍 Filter</button>
+        <button id="btnResetFilter" style="background: #6b7280; padding: 8px 16px; width: auto; margin: 0;">⟳ Reset</button>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; gap: 10px;">
+            <button id="pdfHarianBtn" style="background: #dc2626; padding: 8px 16px; width: auto; margin: 0;">📄 Rekap Hari Ini</button>
+        </div>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Nama Santri</th>
+                <th>Surah</th>
+                <th>Ayat</th>
+                <th>Nilai</th>
+                <th>Keterangan</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+        </div>
+
+        <!-- TAB DATA SANTRI -->
+        <div id="tabSantri" class="tab-content">
+            <div class="form-box">
+                <div class="subtitle">➕ Tambah Santri Baru</div>
+                <input type="text" id="namaSantriBaru" placeholder="Nama Santri">
+                <input type="text" id="nomorWaBaru" placeholder="Nomor WA Orang Tua (contoh: 6281234567890)">
+                <button id="tambahSantriBtn">📝 Tambah Santri</button>
+            </div>
+
+            <div class="table-box">
+                <div class="subtitle">👨‍🎓 Daftar Santri</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama Santri</th>
+                            <th>No WA Orang Tua</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="santriTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+    <!-- TAB 3: DASHBOARD -->
+    <div id="tabDashboard" class="tab-content">
+        <div class="table-box">
+            <div class="subtitle">📊 Rekap Nilai Santri</div>
+            <div style="overflow-x: auto;">
+                <table id="dashboardTable">
+                    <thead>
+                        <tr>
+                            <th>Peringkat</th>
+                            <th>Nama Santri</th>
+                            <th>Total Setoran</th>
+                            <th>Rata-rata Nilai</th>
+                            <th>Nilai Tertinggi</th>
+                            <th>Nilai Terendah</th>
+                            <th>Predikat</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboardBody">
+                        <tr><td colspan="7">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="subtitle">✏️ Edit Nomor WhatsApp</div>
+            <input type="text" id="editNama" placeholder="Nama Santri" readonly style="background:#f3f4f6;">
+            <input type="text" id="editNomorWa" placeholder="Nomor WA Baru (contoh: 6281234567890)">
+            <div class="modal-buttons">
+                <button id="btnSimpanEdit" class="btn-simpan">💾 Simpan</button>
+                <button id="btnBatalEdit" class="btn-batal">❌ Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
