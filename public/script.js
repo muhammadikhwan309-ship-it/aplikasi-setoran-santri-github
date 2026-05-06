@@ -252,51 +252,68 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     
     // ============ DASHBOARD ============
-    async function loadDashboard() {
-        try {
-            const res = await fetch(`${BASE_URL}/api/dashboard`);
-            const data = await res.json();
-            
-            const tbody = document.getElementById("dashboardBody");
-            if (tbody) {
-                tbody.innerHTML = "";
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8">Belum ada data setoran</td></tr>';
-                } else {
-                    data.forEach((item, i) => {
-                        const row = tbody.insertRow();
-                        row.insertCell(0).innerHTML = i + 1;
-                        row.insertCell(1).innerHTML = item.nama;
-                        row.insertCell(2).innerHTML = item.total_setoran;
-                        row.insertCell(3).innerHTML = item.rata_rata;
-                        row.insertCell(4).innerHTML = item.nilai_tertinggi;
-                        row.insertCell(5).innerHTML = item.nilai_terendah;
-                        
-                        let predikat = "";
-                        if (item.rata_rata >= 85) predikat = "🏆 Sangat Baik";
-                        else if (item.rata_rata >= 70) predikat = "👍 Baik";
-                        else if (item.rata_rata >= 60) predikat = "📖 Cukup";
-                        else predikat = "⚠️ Kurang";
-                        row.insertCell(6).innerHTML = predikat;
-                        
-                        // Kolom Aksi (HAPUS) - panggil fungsi global
-                        const aksiCell = row.insertCell(7);
-                        const safeNama = item.nama.replace(/'/g, "\\'");
-                        aksiCell.innerHTML = `
-                            <button onclick="hapusTotalSetoran('${safeNama}')" 
-                                    style="background:#ff4d4d; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">
-                                🗑️ Hapus
-                            </button>
-                        `;
-                        
-                        if (i === 0) row.style.background = "#fef3c7";
-                    });
-                }
+async function loadDashboard() {
+    try {
+        const res = await fetch(`${BASE_URL}/api/dashboard`);
+        const data = await res.json();
+        
+        const tbody = document.getElementById("dashboardBody");
+        if (tbody) {
+            tbody.innerHTML = "";
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10">Belum ada data setoran</td></tr>';
+            } else {
+                data.forEach((item, i) => {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).innerHTML = i + 1;
+                    row.insertCell(1).innerHTML = item.nama;
+                    row.insertCell(2).innerHTML = item.total_setoran;
+                    row.insertCell(3).innerHTML = item.rata_rata;
+                    row.insertCell(4).innerHTML = item.nilai_tertinggi;
+                    row.insertCell(5).innerHTML = item.nilai_terendah;
+                    
+                    // Format tanggal terakhir setor
+                    let tglTerakhir = "-";
+                    if (item.terakhir_setor) {
+                        const tanggal = new Date(item.terakhir_setor);
+                        tglTerakhir = tanggal.toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        });
+                    }
+                    row.insertCell(6).innerHTML = tglTerakhir;
+                    
+                    // Status setoran hari ini
+                    let badgeHariIni = '';
+                    if (item.setoran_hari_ini > 0) {
+                        badgeHariIni = `<span style="background:#10b981; color:white; padding:4px 10px; border-radius:20px; font-size:12px;">✅ Setor ${item.setoran_hari_ini}x hari ini</span>`;
+                    } else {
+                        badgeHariIni = `<span style="background:#ef4444; color:white; padding:4px 10px; border-radius:20px; font-size:12px;">❌ Belum setor hari ini</span>`;
+                    }
+                    row.insertCell(7).innerHTML = badgeHariIni;
+                    
+                    // Predikat
+                    let predikat = "";
+                    if (item.rata_rata >= 85) predikat = "🏆 Sangat Baik";
+                    else if (item.rata_rata >= 70) predikat = "👍 Baik";
+                    else if (item.rata_rata >= 60) predikat = "📖 Cukup";
+                    else predikat = "⚠️ Kurang";
+                    row.insertCell(8).innerHTML = predikat;
+                    
+                    // Tombol hapus
+                    const aksiCell = row.insertCell(9);
+                    const safeNama = item.nama.replace(/'/g, "\\'");
+                    aksiCell.innerHTML = `<button onclick="hapusTotalSetoran('${safeNama}')" style="background:#ff4d4d; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🗑️ Hapus Semua</button>`;
+                    
+                    if (i === 0) row.style.background = "#fef3c7";
+                });
             }
-        } catch (err) {
-            console.error(err);
         }
+    } catch (err) {
+        console.error(err);
     }
+}
     
     // Expose loadDashboard ke global agar bisa dipanggil dari hapusTotalSetoran
     window.loadDashboardGlobal = loadDashboard;
