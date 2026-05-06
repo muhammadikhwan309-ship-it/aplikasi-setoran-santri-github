@@ -39,14 +39,24 @@ app.post("/api/setoran", (req, res) => {
 
 // ============ API DASHBOARD & HAPUS ============
 app.get("/api/dashboard", (req, res) => {
-    const sql = `SELECT nama, COUNT(*) as total_setoran, ROUND(AVG(nilai), 1) as rata_rata, MAX(nilai) as nilai_tertinggi, MIN(nilai) as nilai_terendah FROM setoran GROUP BY nama ORDER BY rata_rata DESC`;
+    const sql = `SELECT 
+        nama, 
+        COUNT(*) as total_setoran, 
+        ROUND(AVG(nilai), 1) as rata_rata, 
+        MAX(nilai) as nilai_tertinggi, 
+        MIN(nilai) as nilai_terendah,
+        MAX(DATE(created_at)) as terakhir_setor,
+        COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as setoran_hari_ini
+    FROM setoran 
+    GROUP BY nama 
+    ORDER BY rata_rata DESC`;
+    
     db.query(sql, (err, rows) => {
-        if (err) return res.status(500).json({ message: "Gagal" });
+        if (err) return res.status(500).json({ message: "Gagal", error: err });
         res.json(rows);
     });
 });
 
-// KUNCI: API Hapus Berdasarkan Nama (Untuk Dashboard)
 app.delete("/api/dashboard/hapus/:nama", (req, res) => {
     const nama = req.params.nama;
     db.query("DELETE FROM setoran WHERE nama = ?", [nama], (err) => {
@@ -54,7 +64,6 @@ app.delete("/api/dashboard/hapus/:nama", (req, res) => {
         res.json({ message: "Berhasil hapus semua setoran" });
     });
 });
-
 // ============ FITUR PDF ============
 app.get("/api/rekap-pdf", (req, res) => {
     const today = new Date().toISOString().split('T')[0];
