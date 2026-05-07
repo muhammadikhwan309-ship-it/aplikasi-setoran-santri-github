@@ -320,7 +320,115 @@ app.get("/api/rekap-pdf", (req, res) => {
         });
     });
 });
+// ============ FITUR PDF REKAP BULANAN ============
+app.get("/api/rekap-bulan-pdf/:tahun/:bulan", (req, res) => {
+    const tahun = req.params.tahun;
+    const bulan = req.params.bulan;
+    const { sekolah_id } = req.query;
+    
+    if (!sekolah_id) return res.status(400).send("Sekolah ID diperlukan");
+    
+    const startDate = `${tahun}-${bulan}-01`;
+    const endDate = `${tahun}-${bulan}-31`;
+    
+    db.query(`SELECT * FROM setoran WHERE DATE(created_at) BETWEEN ? AND ? AND sekolah_id = ? ORDER BY created_at ASC`, 
+        [startDate, endDate, sekolah_id], (err, rows) => {
+        if (err || rows.length === 0) {
+            return res.status(404).send("Tidak ada data setoran di bulan ini");
+        }
+        
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+        const namaBulan = new Date(tahun, bulan - 1).toLocaleDateString('id-ID', { month: 'long' });
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename=rekap_bulan_${tahun}_${bulan}.pdf`);
+        doc.pipe(res);
+        
+        db.query("SELECT nama_sekolah, alamat FROM daftar_sekolah WHERE kode_sekolah = ?", [sekolah_id], (errSekolah, sekolahRow) => {
+            const namaSekolah = (sekolahRow && sekolahRow[0]) ? sekolahRow[0].nama_sekolah : 'MADRASAH';
+            const alamat = (sekolahRow && sekolahRow[0]) ? sekolahRow[0].alamat : '';
+            
+            // Header
+            doc.fontSize(16).font('Helvetica-Bold').text(namaSekolah, { align: 'center' });
+            doc.fontSize(10).font('Helvetica').text(alamat, { align: 'center' });
+            doc.moveDown();
+            doc.fontSize(14).font('Helvetica-Bold').text('LAPORAN SETORAN BULANAN', { align: 'center' });
+            doc.fontSize(12).font('Helvetica').text(`${namaBulan} ${tahun}`, { align: 'center' });
+            doc.moveDown();
+            
+            // Tabel
+            const startX = 50;
+            let y = doc.y;
+            
+            doc.fontSize(10).font('Helvetica-Bold');
+            doc.text('No', startX, y);
+            doc.text('Nama', startX + 40, y);
+            doc.text('Surah', startX + 150, y);
+            doc.text('Ayat', startX + 250, y);
+            doc.text('Tgl', startX + 320, y);
+            doc.text('Ket', startX + 380, y);
+            
+            y += 20;
+            doc.font('Helvetica');
+            
+            let no = 1;
+            rows.forEach((row, i) => {
+                if (y > 700) {
+                    doc.addPage();
+                    y = 50;
+                    doc.font('Helvetica-Bold');
+                    doc.text('No', startX, y);
+                    doc.text('Nama', startX + 40, y);
+                    doc.text('Surah', startX + 150, y);
+                    doc.text('Ayat', startX + 250, y);
+                    doc.text('Tgl', startX + 320, y);
+                    doc.text('Ket', startX + 380, y);
+                    y += 20;
+                    doc.font('Helvetica');
+                }
+                
+                const tanggal = new Date(row.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                const keterangan = row.nilai >= 85 ? 'Lancar' : 'Kurang';
+                
+                doc.text(no.toString(), startX, y);
+                doc.text(row.nama || '-', startX + 40, y);
+                doc.text(row.surah || '-', startX + 150, y);
+                doc.text(row.ayat || '-', startX + 250, y);
+                doc.text(tanggal, startX + 320, y);
+                doc.text(keterangan, startX + 380, y);
+                y += 18;
+                no++;
+            });
+            
+            // Footer
+            doc.moveDown();
+            doc.fontSize(9);
+            doc.text(`Total Setoran: ${rows.length} kali`, startX, y + 10);
+            doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, startX, y + 25);
+            
+            doc.end();
+        });
+    });
+});
 
+// ============ HAPUS REKAPAN PER BULAN ============
+app.delete("/api/hapus-rekapan-bulan/:tahun/:bulan", (req, res) => {
+    const tahun = req.params.tahun;
+    const bulan = req.params.bulan;
+    const { sekolah_id } = req.query;
+    
+    if (!sekolah_id) return res.status(400).json({ message: "Sekolah ID diperlukan" });
+    
+    const startDate = `${tahun}-${bulan}-01`;
+    const endDate = `${tahun}-${bulan}-31`;
+    
+    db.query("DELETE FROM setoran WHERE DATE(created_at) BETWEEN ? AND ? AND sekolah_id = ?", 
+        [startDate, endDate, sekolah_id], (err, result) => {
+        if (err) {
+            return res.status(500).json({ message: "Gagal menghapus rekapan", error: err.message });
+        }
+        res.json({ message: `Berhasil menghapus ${result.affectedRows} data setoran ${bulan}/${tahun}` });
+    });
+});
 // ============ HALAMAN UTAMA ============
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
