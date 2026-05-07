@@ -201,31 +201,25 @@ app.get("/api/rekap-pdf", (req, res) => {
         doc.end();
     });
 });
-// ============ FITUR PDF REKAP PER BULAN ============
-app.get("/api/rekap-bulan-pdf/:tahun/:bulan", (req, res) => {
-    const tahun = req.params.tahun;
-    const bulan = req.params.bulan;
-    
-    const startDate = `${tahun}-${bulan}-01`;
-    const endDate = `${tahun}-${bulan}-31`;
+// ============ FITUR PDF REKAP HARIAN (SEDERHANA - TIDAK ADA HALAMAN KOSONG) ============
+app.get("/api/rekap-pdf", (req, res) => {
+    const today = new Date().toISOString().split('T')[0];
     
     db.query(`
-        SELECT s.*, ds.nomor_wa_orangtua 
-        FROM setoran s
-        LEFT JOIN data_santri ds ON s.nama = ds.nama_santri
-        WHERE DATE(s.created_at) BETWEEN ? AND ? 
-        ORDER BY s.created_at ASC
-    `, [startDate, endDate], (err, rows) => {
+        SELECT * FROM setoran
+        WHERE DATE(created_at) = ? 
+        ORDER BY created_at DESC
+    `, [today], (err, rows) => {
         if (err || rows.length === 0) {
-            return res.status(404).send("Tidak ada data setoran di bulan ini");
+            return res.status(404).send("Tidak ada data setoran hari ini");
         }
         
-        const doc = new PDFDocument({ margin: 50, size: 'A4' });
-        const namaBulan = new Date(tahun, bulan - 1).toLocaleDateString('id-ID', { month: 'long' });
+        const doc = new PDFDocument({ margin: 50, size: 'A4', autoFirstPage: true });
         res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", `inline; filename=rekap_bulan_${tahun}_${bulan}.pdf`);
+        res.setHeader("Content-Disposition", `inline; filename=rekap_harian_${today}.pdf`);
         doc.pipe(res);
         
+        // ===== LOGO =====
         const logoPath = path.join(__dirname, 'public', 'images', 'logo.png');
         if (fs.existsSync(logoPath)) {
             const pageWidth = doc.page.width;
@@ -233,83 +227,77 @@ app.get("/api/rekap-bulan-pdf/:tahun/:bulan", (req, res) => {
             const logoX = (pageWidth - logoWidth) / 2;
             doc.image(logoPath, logoX, 40, { width: logoWidth });
             doc.moveDown(4);
-        } else {
-            doc.moveDown(2);
         }
         
+        // ===== HEADER =====
         doc.fontSize(14).font('Helvetica-Bold');
         doc.text('MI HIDAYATUL MUBTADIEN', { align: 'center' });
         doc.moveDown(0.5);
         doc.fontSize(12).font('Helvetica');
-        doc.text('LAPORAN SETORAN BULANAN', { align: 'center' });
+        doc.text('LAPORAN SETORAN SISWA', { align: 'center' });
         doc.moveDown(0.5);
         doc.fontSize(10);
-        doc.text(`Bulan: ${namaBulan} ${tahun}`, { align: 'center' });
-        doc.moveDown(1.5);
+        const formattedDate = new Date(today).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        doc.text(formattedDate, { align: 'center' });
+        doc.moveDown(2);
         
-        const colPos = [40, 100, 200, 300, 400, 480];
-        const headers = ['No', 'Nama', 'Surah', 'Ayat', 'Tgl', 'Ket'];
+        // ===== TABEL =====
+        const startX = 40;
+        let currentY = doc.y;
         
-        doc.rect(35, doc.y - 3, 530, 20).fill('#e8e8e8');
-        doc.fillColor('#000000');
-        doc.fontSize(8).font('Helvetica-Bold');
-        headers.forEach((header, i) => {
-            doc.text(header, colPos[i], doc.y);
-        });
-        doc.moveTo(35, doc.y + 17).lineTo(565, doc.y + 17).stroke();
+        // Header tabel
+        doc.fontSize(9).font('Helvetica-Bold');
+        doc.text('No', startX, currentY);
+        doc.text('Nama', startX + 40, currentY);
+        doc.text('Surah', startX + 130, currentY);
+        doc.text('Ayat', startX + 230, currentY);
+        doc.text('Keterangan', startX + 320, currentY);
         
-        let y = doc.y + 25;
-        let no = 1;
-        let rowCounter = 0;
-        const maxRowsPerPage = 30;
-        let currentPage = 1;
+        // Garis bawah header
+        doc.moveTo(startX, currentY + 15).lineTo(550, currentY + 15).stroke();
         
-        rows.forEach((row) => {
-            if (rowCounter >= maxRowsPerPage) {
+        currentY += 25;
+        doc.fontSize(9).font('Helvetica');
+        
+        // Isi data
+        rows.forEach((row, index) => {
+            // Cek jika melebihi halaman
+            if (currentY > 750) {
                 doc.addPage();
-                y = 50;
-                rowCounter = 0;
-                currentPage++;
+                currentY = 50;
                 
-                doc.rect(35, y - 3, 530, 20).fill('#e8e8e8');
-                doc.fillColor('#000000');
-                doc.fontSize(8).font('Helvetica-Bold');
-                headers.forEach((header, i) => {
-                    doc.text(header, colPos[i], y);
-                });
-                doc.moveTo(35, y + 17).lineTo(565, y + 17).stroke();
-                y += 25;
+                // Ulang header di halaman baru
+                doc.fontSize(9).font('Helvetica-Bold');
+                doc.text('No', startX, currentY);
+                doc.text('Nama', startX + 40, currentY);
+                doc.text('Surah', startX + 130, currentY);
+                doc.text('Ayat', startX + 230, currentY);
+                doc.text('Keterangan', startX + 320, currentY);
+                doc.moveTo(startX, currentY + 15).lineTo(550, currentY + 15).stroke();
+                currentY += 25;
+                doc.fontSize(9).font('Helvetica');
             }
             
-            const tanggal = new Date(row.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-            let keterangan = row.nilai >= 85 ? '✅ Lancar' : '⚠️ Kurang';
+            let keterangan = row.nilai >= 85 ? 'Lancar' : 'Kurang Lancar';
             
-            doc.fontSize(8).font('Helvetica');
-            doc.text(no.toString(), colPos[0], y);
-            doc.text(row.nama || '-', colPos[1], y, { width: 90 });
-            doc.text(row.surah || '-', colPos[2], y, { width: 90 });
-            doc.text(row.ayat || '-', colPos[3], y, { width: 90 });
-            doc.text(tanggal, colPos[4], y);
-            doc.text(keterangan, colPos[5], y);
+            doc.text((index + 1).toString(), startX, currentY);
+            doc.text(row.nama || '-', startX + 40, currentY, { width: 80 });
+            doc.text(row.surah || '-', startX + 130, currentY, { width: 90 });
+            doc.text(row.ayat || '-', startX + 230, currentY, { width: 80 });
+            doc.text(keterangan, startX + 320, currentY);
             
-            y += 18;
-            no++;
-            rowCounter++;
+            currentY += 20;
         });
         
-        doc.moveTo(35, y + 2).lineTo(565, y + 2).stroke();
-        
+        // ===== FOOTER =====
         const pageHeight = doc.page.height;
-        doc.fontSize(9).font('Helvetica-Bold');
-        doc.text(`Total Setoran: ${rows.length} kali`, 35, pageHeight - 50);
         doc.fontSize(8);
-        doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')} | Halaman ${currentPage}`, 35, pageHeight - 35);
-        doc.text('MI Hidayatul Mubtadiien - Bangil, Pasuruan', 35, pageHeight - 20, { align: 'center', width: 530 });
+        doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, startX, pageHeight - 30);
+        doc.text('MI Hidayatul Mubtadiien - Bangil, Pasuruan', startX, pageHeight - 20, { width: 510, align: 'center' });
         
         doc.end();
     });
 });
-
 // ============ HAPUS REKAPAN PER BULAN ============
 app.delete("/api/hapus-rekapan-bulan/:tahun/:bulan", (req, res) => {
     const tahun = req.params.tahun;
