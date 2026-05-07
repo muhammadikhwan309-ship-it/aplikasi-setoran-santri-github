@@ -1,247 +1,265 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Setoran Quran</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
 
-    <div class="container">
-        <h1>📚 Aplikasi Setoran Madrasah Quran</h1>
-
-        <div class="tab">
-            <button id="tabSetoranBtn" class="active">📖 Setoran Quran</button>
-            <button id="tabSantriBtn">👨‍🎓 Data Santri</button>
-            <button id="tabDashboardBtn">📊 Dashboard</button>
+<!-- ===================== LAYAR KODE SEKOLAH ===================== -->
+<div id="loginScreen" class="login-overlay">
+    <div class="login-box">
+        <div class="login-icon">☽</div>
+        <h2 class="login-title">Setoran Quran</h2>
+        <p class="login-subtitle">Masukkan kode madrasah Anda untuk melanjutkan</p>
+        <div class="form-group">
+            <label class="form-label">Kode Sekolah</label>
+            <input type="text" id="inputKodeSekolah" class="form-control"
+                   placeholder="cth: MI001" style="text-transform:uppercase; text-align:center; font-size:18px; letter-spacing:0.1em;">
         </div>
+        <p id="kodeError" class="error-msg" style="display:none;"></p>
+        <button id="btnMasukKode" class="btn btn-primary btn-full" style="margin-top:8px;">
+            🔓 Masuk
+        </button>
+    </div>
+</div>
 
-        <!-- TAB SETORAN -->
+<!-- ===================== APLIKASI UTAMA ===================== -->
+<div id="appScreen" style="display:none;">
+
+    <!-- HEADER -->
+    <header class="app-header">
+        <div class="header-inner">
+            <div class="header-brand">
+                <div class="brand-icon">☽</div>
+                <div class="brand-text">
+                    <h1 id="namaSekolahHeader">Setoran Quran</h1>
+                    <p>Madrasah Quran</p>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div class="header-date" id="headerDate"></div>
+                <button id="btnLogout" class="btn btn-ghost" style="padding:7px 14px; font-size:12px;">
+                    🚪 Keluar
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-wrapper">
+
+        <!-- TAB NAVIGATION -->
+        <nav class="tab-nav">
+            <button id="tabSetoranBtn" class="tab-btn active">
+                <span class="tab-icon">📖</span>
+                <span class="tab-label">Setoran</span>
+            </button>
+            <button id="tabSantriBtn" class="tab-btn">
+                <span class="tab-icon">👨‍🎓</span>
+                <span class="tab-label">Santri</span>
+            </button>
+            <button id="tabDashboardBtn" class="tab-btn">
+                <span class="tab-icon">📊</span>
+                <span class="tab-label">Dashboard</span>
+            </button>
+        </nav>
+
+        <!-- ===== TAB SETORAN ===== -->
         <div id="tabSetoran" class="tab-content active">
-            <div class="form-box">
-                <div class="subtitle">📝 Form Setoran</div>
-                
-                <select id="pilihSantri">
-                    <option value="">-- Pilih Nama Santri --</option>
-                </select>
-                
-                <select id="surah">
-                    <option value="">Pilih Surah</option>
-                    <option value="An-Naba">An-Naba</option>
-                    <option value="An-Naziat">An-Naziat</option>
-                    <option value="Abasa">Abasa</option>
-                    <option value="At-Takwir">At-Takwir</option>
-                    <option value="Al-Infitar">Al-Infitar</option>
-                    <option value="Al-Mutaffifin">Al-Mutaffifin</option>
-                    <option value="Al-Insyiqaq">Al-Insyiqaq</option>
-                    <option value="Al-Buruj">Al-Buruj</option>
-                    <option value="At-Tariq">At-Tariq</option>
-                    <option value="Al-Ala">Al-Ala</option>
-                    <option value="Al-Ghasyiyah">Al-Ghasyiyah</option>
-                    <option value="Al-Fajr">Al-Fajr</option>
-                    <option value="Al-Balad">Al-Balad</option>
-                    <option value="Asy-Syams">Asy-Syams</option>
-                    <option value="Al-Lail">Al-Lail</option>
-                    <option value="Ad-Duha">Ad-Duha</option>
-                    <option value="Asy-Syarh">Asy-Syarh</option>
-                    <option value="At-Tin">At-Tin</option>
-                    <option value="Al-Alaq">Al-Alaq</option>
-                    <option value="Al-Qadr">Al-Qadr</option>
-                    <option value="Al-Bayyinah">Al-Bayyinah</option>
-                    <option value="Az-Zalzalah">Az-Zalzalah</option>
-                    <option value="Al-Adiyat">Al-Adiyat</option>
-                    <option value="Al-Qariah">Al-Qariah</option>
-                    <option value="At-Takasur">At-Takasur</option>
-                    <option value="Al-Asr">Al-Asr</option>
-                    <option value="Al-Humazah">Al-Humazah</option>
-                    <option value="Al-Fil">Al-Fil</option>
-                    <option value="Quraisy">Quraisy</option>
-                    <option value="Al-Maun">Al-Maun</option>
-                    <option value="Al-Kausar">Al-Kausar</option>
-                    <option value="Al-Kafirun">Al-Kafirun</option>
-                    <option value="An-Nasr">An-Nasr</option>
-                    <option value="Al-Lahab">Al-Lahab</option>
-                    <option value="Al-Ikhlas">Al-Ikhlas</option>
-                    <option value="Al-Falaq">Al-Falaq</option>
-                    <option value="An-Nas">An-Nas</option>
-                </select>
 
-                <input type="text" id="ayat" placeholder="Ayat (contoh: 1-5 atau 1,2,3)">
-                <input type="number" id="nilai" placeholder="Nilai (0-100)">
-
-                <button id="saveBtn">💾 Simpan & Kirim ke WhatsApp</button>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title-icon">📝</span>
+                    <h2 class="card-title">Form Setoran</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nama Santri</label>
+                            <select id="pilihSantri" class="form-control">
+                                <option value="">-- Pilih Santri --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Surah</label>
+                            <select id="surah" class="form-control">
+                                <option value="">Pilih Surah</option>
+                                <option>An-Naba</option><option>An-Naziat</option><option>Abasa</option>
+                                <option>At-Takwir</option><option>Al-Infitar</option><option>Al-Mutaffifin</option>
+                                <option>Al-Insyiqaq</option><option>Al-Buruj</option><option>At-Tariq</option>
+                                <option>Al-Ala</option><option>Al-Ghasyiyah</option><option>Al-Fajr</option>
+                                <option>Al-Balad</option><option>Asy-Syams</option><option>Al-Lail</option>
+                                <option>Ad-Duha</option><option>Asy-Syarh</option><option>At-Tin</option>
+                                <option>Al-Alaq</option><option>Al-Qadr</option><option>Al-Bayyinah</option>
+                                <option>Az-Zalzalah</option><option>Al-Adiyat</option><option>Al-Qariah</option>
+                                <option>At-Takasur</option><option>Al-Asr</option><option>Al-Humazah</option>
+                                <option>Al-Fil</option><option>Quraisy</option><option>Al-Maun</option>
+                                <option>Al-Kausar</option><option>Al-Kafirun</option><option>An-Nasr</option>
+                                <option>Al-Lahab</option><option>Al-Ikhlas</option><option>Al-Falaq</option>
+                                <option>An-Nas</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Ayat</label>
+                            <input type="text" id="ayat" class="form-control" placeholder="cth: 1-5 atau 1,2,3">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nilai (0–100)</label>
+                            <input type="number" id="nilai" class="form-control" placeholder="Masukkan nilai" min="0" max="100">
+                        </div>
+                    </div>
+                    <button id="saveBtn" class="btn btn-primary btn-full">
+                        <span>💾</span> Simpan & Kirim WhatsApp
+                    </button>
+                </div>
             </div>
 
-            <div class="table-box">
-                <div class="subtitle">📋 Riwayat Setoran</div>
-                
-                <!-- FORM FILTER -->
-                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                    <select id="filterSantri" style="width: auto; flex: 1; min-width: 120px;">
-                        <option value="">Semua Santri</option>
-                    </select>
-                    <select id="filterSurah" style="width: auto; flex: 1; min-width: 120px;">
-                        <option value="">Semua Surah</option>
-                        <option value="An-Naba">An-Naba</option>
-                        <option value="An-Naziat">An-Naziat</option>
-                        <option value="Abasa">Abasa</option>
-                        <option value="At-Takwir">At-Takwir</option>
-                        <option value="Al-Infitar">Al-Infitar</option>
-                        <option value="Al-Mutaffifin">Al-Mutaffifin</option>
-                        <option value="Al-Insyiqaq">Al-Insyiqaq</option>
-                        <option value="Al-Buruj">Al-Buruj</option>
-                        <option value="At-Tariq">At-Tariq</option>
-                        <option value="Al-Ala">Al-Ala</option>
-                        <option value="Al-Ghasyiyah">Al-Ghasyiyah</option>
-                        <option value="Al-Fajr">Al-Fajr</option>
-                        <option value="Al-Balad">Al-Balad</option>
-                        <option value="Asy-Syams">Asy-Syams</option>
-                        <option value="Al-Lail">Al-Lail</option>
-                        <option value="Ad-Duha">Ad-Duha</option>
-                        <option value="Asy-Syarh">Asy-Syarh</option>
-                        <option value="At-Tin">At-Tin</option>
-                        <option value="Al-Alaq">Al-Alaq</option>
-                        <option value="Al-Qadr">Al-Qadr</option>
-                        <option value="Al-Bayyinah">Al-Bayyinah</option>
-                        <option value="Az-Zalzalah">Az-Zalzalah</option>
-                        <option value="Al-Adiyat">Al-Adiyat</option>
-                        <option value="Al-Qariah">Al-Qariah</option>
-                        <option value="At-Takasur">At-Takasur</option>
-                        <option value="Al-Asr">Al-Asr</option>
-                        <option value="Al-Humazah">Al-Humazah</option>
-                        <option value="Al-Fil">Al-Fil</option>
-                        <option value="Quraisy">Quraisy</option>
-                        <option value="Al-Maun">Al-Maun</option>
-                        <option value="Al-Kausar">Al-Kausar</option>
-                        <option value="Al-Kafirun">Al-Kafirun</option>
-                        <option value="An-Nasr">An-Nasr</option>
-                        <option value="Al-Lahab">Al-Lahab</option>
-                        <option value="Al-Ikhlas">Al-Ikhlas</option>
-                        <option value="Al-Falaq">Al-Falaq</option>
-                        <option value="An-Nas">An-Nas</option>
-                    </select>
-                    <input type="date" id="filterTanggalMulai" placeholder="Dari tanggal" style="width: auto; flex: 1;">
-                    <input type="date" id="filterTanggalSampai" placeholder="Sampai tanggal" style="width: auto; flex: 1;">
-                    <button id="btnFilter" style="background: #14532d; padding: 8px 16px; width: auto; margin: 0;">🔍 Filter</button>
-                    <button id="btnResetFilter" style="background: #6b7280; padding: 8px 16px; width: auto; margin: 0;">⟳ Reset</button>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title-icon">📋</span>
+                    <h2 class="card-title">Riwayat Setoran</h2>
                 </div>
-                
-                <!-- FORM REKAP BULANAN (FITUR BARU) -->
-                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; background: #f0fdf4; padding: 10px; border-radius: 8px;">
-                    <span style="font-weight: bold; color: #166534;">📅 Rekap Bulanan:</span>
-                    <select id="bulanFilter" style="width: auto; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
-                        <option value="1">Januari</option>
-                        <option value="2">Februari</option>
-                        <option value="3">Maret</option>
-                        <option value="4">April</option>
-                        <option value="5">Mei</option>
-                        <option value="6">Juni</option>
-                        <option value="7">Juli</option>
-                        <option value="8">Agustus</option>
-                        <option value="9">September</option>
-                        <option value="10">Oktober</option>
-                        <option value="11">November</option>
-                        <option value="12">Desember</option>
-                    </select>
-                    <input type="number" id="tahunFilter" placeholder="Tahun" value="2026" style="width: 100px; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
-                    <button id="btnRekapBulan" style="background: #10b981; padding: 8px 16px; width: auto; margin: 0; color: white; border: none; border-radius: 5px; cursor: pointer;">📅 Rekap Bulanan PDF</button>
-                    <button id="btnHapusRekapanBulan" style="background: #ef4444; padding: 8px 16px; width: auto; margin: 0; color: white; border: none; border-radius: 5px; cursor: pointer;">🗑️ Hapus Rekapan Bulan Ini</button>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                    <div style="display: flex; gap: 10px;">
-                        <button id="pdfHarianBtn" style="background: #dc2626; padding: 8px 16px; width: auto; margin: 0; color: white; border: none; border-radius: 5px; cursor: pointer;">📄 Rekap Hari Ini</button>
+                <div class="card-body">
+                    <div class="filter-bar">
+                        <select id="filterSantri" class="form-control filter-item">
+                            <option value="">Semua Santri</option>
+                        </select>
+                        <select id="filterSurah" class="form-control filter-item">
+                            <option value="">Semua Surah</option>
+                            <option>An-Naba</option><option>An-Naziat</option><option>Abasa</option>
+                            <option>At-Takwir</option><option>Al-Infitar</option><option>Al-Mutaffifin</option>
+                            <option>Al-Insyiqaq</option><option>Al-Buruj</option><option>At-Tariq</option>
+                            <option>Al-Ala</option><option>Al-Ghasyiyah</option><option>Al-Fajr</option>
+                            <option>Al-Balad</option><option>Asy-Syams</option><option>Al-Lail</option>
+                            <option>Ad-Duha</option><option>Asy-Syarh</option><option>At-Tin</option>
+                            <option>Al-Alaq</option><option>Al-Qadr</option><option>Al-Bayyinah</option>
+                            <option>Az-Zalzalah</option><option>Al-Adiyat</option><option>Al-Qariah</option>
+                            <option>At-Takasur</option><option>Al-Asr</option><option>Al-Humazah</option>
+                            <option>Al-Fil</option><option>Quraisy</option><option>Al-Maun</option>
+                            <option>Al-Kausar</option><option>Al-Kafirun</option><option>An-Nasr</option>
+                            <option>Al-Lahab</option><option>Al-Ikhlas</option><option>Al-Falaq</option>
+                            <option>An-Nas</option>
+                        </select>
+                        <input type="date" id="filterTanggalMulai" class="form-control filter-item">
+                        <input type="date" id="filterTanggalSampai" class="form-control filter-item">
+                        <button id="btnFilter" class="btn btn-secondary filter-btn">🔍 Filter</button>
+                        <button id="btnResetFilter" class="btn btn-ghost filter-btn">⟳ Reset</button>
+                    </div>
+                    <div class="action-bar">
+                        <button id="pdfHarianBtn" class="btn btn-danger">📄 Rekap Hari Ini</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Santri</th><th>Surah</th><th>Ayat</th>
+                                    <th>Nilai</th><th>Keterangan</th><th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
                     </div>
                 </div>
-                
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nama Santri</th>
-                            <th>Surah</th>
-                            <th>Ayat</th>
-                            <th>Nilai</th>
-                            <th>Keterangan</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
             </div>
         </div>
 
-        <!-- TAB DATA SANTRI -->
+        <!-- ===== TAB DATA SANTRI ===== -->
         <div id="tabSantri" class="tab-content">
-            <div class="form-box">
-                <div class="subtitle">➕ Tambah Santri Baru</div>
-                <input type="text" id="namaSantriBaru" placeholder="Nama Santri">
-                <input type="text" id="nomorWaBaru" placeholder="Nomor WA Orang Tua (contoh: 6281234567890)">
-                <button id="tambahSantriBtn">📝 Tambah Santri</button>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title-icon">➕</span>
+                    <h2 class="card-title">Tambah Santri Baru</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nama Santri</label>
+                            <input type="text" id="namaSantriBaru" class="form-control" placeholder="Nama lengkap santri">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">No. WA Orang Tua</label>
+                            <input type="text" id="nomorWaBaru" class="form-control" placeholder="cth: 6281234567890">
+                        </div>
+                    </div>
+                    <button id="tambahSantriBtn" class="btn btn-primary btn-full">📝 Tambah Santri</button>
+                </div>
             </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title-icon">👨‍🎓</span>
+                    <h2 class="card-title">Daftar Santri</h2>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>ID</th><th>Nama Santri</th><th>No. WA Orang Tua</th><th>Aksi</th></tr>
+                            </thead>
+                            <tbody id="santriTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            <div class="table-box">
-                <div class="subtitle">👨‍🎓 Daftar Santri</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nama Santri</th>
-                            <th>No WA Orang Tua</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="santriTableBody"></tbody>
-                </table>
+        <!-- ===== TAB DASHBOARD ===== -->
+        <div id="tabDashboard" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title-icon">📊</span>
+                    <h2 class="card-title">Rekap Nilai Santri</h2>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="data-table" id="dashboardTable">
+                            <thead>
+                                <tr>
+                                    <th>Peringkat</th><th>Nama Santri</th><th>Total Setoran</th>
+                                    <th>Rata-rata</th><th>Tertinggi</th><th>Terendah</th><th>Predikat</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardBody">
+                                <tr><td colspan="7" class="empty-state">Memuat data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
-    </div>
-    <!-- TAB 3: DASHBOARD -->
-    <div id="tabDashboard" class="tab-content">
-        <div class="table-box">
-            <div class="subtitle">📊 Rekap Nilai Santri</div>
-            <div style="overflow-x: auto;">
-                <table id="dashboardTable">
-                    <thead>
-                        <tr>
-                            <th>Peringkat</th>
-                            <th>Nama Santri</th>
-                            <th>Total Setoran</th>
-                            <th>Rata-rata</th>
-                            <th>Nilai Tertinggi</th>
-                            <th>Nilai Terendah</th>
-                            <th>📅 Terakhir Setor</th>
-                            <th>⚡ Status Hari Ini</th>
-                            <th>🏆 Predikat</th>
-                            <th>🗑️ Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dashboardBody">
-                        <tr><td colspan="10">Loading...</td></tr>
-                    </tbody>
-                </table>
+    </div><!-- end app-wrapper -->
+
+    <!-- MODAL EDIT WA -->
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header"><h3>✏️ Edit Nomor WhatsApp</h3></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Nama Santri</label>
+                    <input type="text" id="editNama" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nomor WA Baru</label>
+                    <input type="text" id="editNomorWa" class="form-control" placeholder="cth: 6281234567890">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btnBatalEdit" class="btn btn-ghost">❌ Batal</button>
+                <button id="btnSimpanEdit" class="btn btn-primary">💾 Simpan</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL EDIT -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <div class="subtitle">✏️ Edit Nomor WhatsApp</div>
-            <input type="text" id="editNama" placeholder="Nama Santri" readonly style="background:#f3f4f6;">
-            <input type="text" id="editNomorWa" placeholder="Nomor WA Baru (contoh: 6281234567890)">
-            <div class="modal-buttons">
-                <button id="btnSimpanEdit" class="btn-simpan">💾 Simpan</button>
-                <button id="btnBatalEdit" class="btn-batal">❌ Batal</button>
-            </div>
-        </div>
-    </div>
+</div><!-- end appScreen -->
 
-    <script src="script.js"></script>
-
+<script src="script.js"></script>
+<script>
+    const d = new Date();
+    const el = document.getElementById('headerDate');
+    if (el) el.textContent = d.toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+</script>
 </body>
-
 </html>
