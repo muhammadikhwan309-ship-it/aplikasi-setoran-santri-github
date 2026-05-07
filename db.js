@@ -1,43 +1,16 @@
 const mysql = require('mysql2');
+const fs = require('fs');
 
-// Debug: cek apakah DATABASE_URL terbaca
-console.log('DATABASE_URL ada:', !!process.env.DATABASE_URL);
-console.log('DATABASE_URL preview:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + '...' : 'KOSONG');
-
-if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL tidak ditemukan! Cek environment variable di Render.');
-    process.exit(1);
-}
-
-const dbUrl = new URL(process.env.DATABASE_URL);
-
-console.log('Host:', dbUrl.hostname);
-console.log('Port:', dbUrl.port);
-console.log('User:', dbUrl.username);
-console.log('DB:', dbUrl.pathname.replace('/', ''));
-
+// Hapus pengecekan DATABASE_URL, langsung hardcode untuk testing
 const db = mysql.createPool({
-    host:     dbUrl.hostname,
-    port:     parseInt(dbUrl.port) || 3306,
-    user:     dbUrl.username,
-    password: dbUrl.password,
-    database: dbUrl.pathname.replace('/', ''),
+    host: 'mysql-1d002628-muhammadikhwan309-5e52.d.aivencloud.com',
+    port: 19436,
+    user: 'avnadmin',
+    password: 'AVNS_sK4ad2m8DVSOUBIyZGI',
+    database: 'defaultdb',
     ssl: {
-        rejectUnauthorized: false
+        ca: fs.readFileSync('./ca.pem')  // ← file certificate dari Aiven
     },
     waitForConnections: true,
-    connectionLimit:    10,
-    queueLimit:         0,
-    connectTimeout:     20000
+    connectionLimit: 10
 });
-
-db.getConnection((err, connection) => {
-    if (err) {
-        console.error('❌ Gagal konek database:', err.message);
-    } else {
-        console.log('✅ Database Aiven Terhubung!');
-        connection.release();
-    }
-});
-
-module.exports = db;
