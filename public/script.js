@@ -241,7 +241,7 @@ function inisialisasiApp() {
             await fetch(`${BASE_URL}/api/santri/${editIdSantri}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ nomor_wa_orangtua: nomorBaru })
+                body: JSON.stringify({ nomor_wa_orangtua: nomorBaru, sekolah_id: SEKOLAH_ID })
             });
             alert("✓ Berhasil update!");
             tutupModal();
@@ -389,9 +389,12 @@ function inisialisasiApp() {
 
             if (!nama || !wa || !surah || !ayat || !nilai) return alert("Isi semua field!");
 
-            let keterangan = nilai >= 85 ? "A - Sangat Baik"
-                           : nilai >= 70 ? "B - Baik"
-                           : nilai >= 60 ? "C - Cukup"
+            const nilaiInt = parseInt(nilai);
+            if (isNaN(nilaiInt) || nilaiInt < 0 || nilaiInt > 100) return alert("Nilai harus angka antara 0-100!");
+
+            let keterangan = nilaiInt >= 85 ? "A - Sangat Baik"
+                           : nilaiInt >= 70 ? "B - Baik"
+                           : nilaiInt >= 60 ? "C - Cukup"
                            : "D - Kurang";
 
             await fetch(`${BASE_URL}/api/setoran`, {
@@ -402,14 +405,14 @@ function inisialisasiApp() {
                     nomor_wa_orangtua: wa,
                     surah,
                     ayat,
-                    nilai: parseInt(nilai),
+                    nilai: nilaiInt,
                     keterangan,
                     sekolah_id: SEKOLAH_ID  // ← wajib
                 })
             });
 
             alert("✓ Data tersimpan!");
-            const pesan = `📚 *LAPORAN SETORAN QURAN*\n\nNama    : ${nama}\nSurah   : ${surah}\nAyat    : ${ayat}\nNilai   : ${nilai}\nKet     : ${keterangan}\n\nBarakallahu fiikum 🌙`;
+            const pesan = `📚 *LAPORAN SETORAN QURAN*\n\nNama    : ${nama}\nSurah   : ${surah}\nAyat    : ${ayat}\nNilai   : ${nilaiInt}\nKet     : ${keterangan}\n\nBarakallahu fiikum 🌙`;
             window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, "_blank");
 
             select.value = "";
