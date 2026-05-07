@@ -90,6 +90,33 @@ initDB();
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+// Setelah db terkoneksi, buat tabel otomatis
+db.query(`
+    CREATE TABLE IF NOT EXISTS data_santri (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nama_santri VARCHAR(255),
+        nomor_wa_orangtua VARCHAR(20)
+    )
+`, (err) => {
+    if (err) console.error('Gagal buat tabel santri:', err);
+    else console.log('✅ Tabel data_santri siap');
+});
+
+db.query(`
+    CREATE TABLE IF NOT EXISTS setoran (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nama VARCHAR(255),
+        nomor_wa VARCHAR(20),
+        surah VARCHAR(100),
+        ayat VARCHAR(50),
+        nilai INT,
+        keterangan TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`, (err) => {
+    if (err) console.error('Gagal buat tabel setoran:', err);
+    else console.log('✅ Tabel setoran siap');
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server nyala di port ${PORT}`));
