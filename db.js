@@ -1,12 +1,23 @@
 const mysql = require('mysql2');
 
-const db = mysql.createConnection(process.env.DATABASE_URL);
+const db = mysql.createPool({
+    uri: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    },
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    connectTimeout: 20000
+});
 
-db.connect((err) => {
+// Test koneksi
+db.getConnection((err, connection) => {
     if (err) {
-        console.error('Gagal konek:', err.message);
+        console.error('❌ Gagal konek database:', err.message);
     } else {
         console.log('✅ Database Aiven Terhubung!');
+        connection.release();
     }
 });
 
