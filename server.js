@@ -92,11 +92,9 @@ app.get("/api/rekap-pdf", (req, res) => {
     const today = new Date().toISOString().split('T')[0];
     
     db.query(`
-        SELECT s.*, ds.nomor_wa_orangtua 
-        FROM setoran s
-        LEFT JOIN data_santri ds ON s.nama = ds.nama_santri
-        WHERE DATE(s.created_at) = ? 
-        ORDER BY s.created_at DESC
+        SELECT * FROM setoran
+        WHERE DATE(created_at) = ? 
+        ORDER BY created_at DESC
     `, [today], (err, rows) => {
         if (err || rows.length === 0) {
             return res.status(404).send("Tidak ada data setoran hari ini");
@@ -107,6 +105,7 @@ app.get("/api/rekap-pdf", (req, res) => {
         res.setHeader("Content-Disposition", `inline; filename=rekap_harian_${today}.pdf`);
         doc.pipe(res);
         
+        // ===== LOGO =====
         const logoPath = path.join(__dirname, 'public', 'images', 'logo.png');
         if (fs.existsSync(logoPath)) {
             const pageWidth = doc.page.width;
@@ -118,9 +117,12 @@ app.get("/api/rekap-pdf", (req, res) => {
             doc.moveDown(2);
         }
         
+        // ===== NAMA MADRASAH =====
         doc.fontSize(14).font('Helvetica-Bold');
         doc.text('MI HIDAYATUL MUBTADIEN', { align: 'center' });
         doc.moveDown(0.5);
+        
+        // ===== JUDUL LAPORAN =====
         doc.fontSize(12).font('Helvetica');
         doc.text('LAPORAN SETORAN SISWA', { align: 'center' });
         doc.moveDown(0.5);
@@ -128,13 +130,15 @@ app.get("/api/rekap-pdf", (req, res) => {
         doc.text(`${new Date(today).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, { align: 'center' });
         doc.moveDown(1.5);
         
+        // ===== KONSTANTA TABEL =====
+        const colPos = [40, 100, 220, 350, 450];
+        const headers = ['No', 'Nama', 'Surah', 'Ayat', 'Keterangan'];
         const maxRowsPerPage = 25;
         let rowCounter = 0;
         let currentPage = 1;
         
+        // Fungsi buat header tabel
         function drawTableHeader(y) {
-            const colPos = [40, 100, 220, 350, 450];
-            const headers = ['No', 'Nama', 'Surah', 'Ayat', 'Keterangan'];
             doc.rect(35, y - 3, 530, 20).fill('#e8e8e8');
             doc.fillColor('#000000');
             doc.fontSize(9).font('Helvetica-Bold');
@@ -178,7 +182,6 @@ app.get("/api/rekap-pdf", (req, res) => {
         doc.end();
     });
 });
-
 // ============ FITUR PDF REKAP PER BULAN ============
 app.get("/api/rekap-bulan-pdf/:tahun/:bulan", (req, res) => {
     const tahun = req.params.tahun;
