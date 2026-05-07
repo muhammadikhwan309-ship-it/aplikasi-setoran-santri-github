@@ -462,6 +462,8 @@ app.delete("/api/hapus-rekapan-bulan/:tahun/:bulan", (req, res) => {
 
 // ============ DATABASE INIT ============
 const initDB = () => {
+    console.log("🔧 Memulai inisialisasi database...");
+    
     // Buat tabel daftar_sekolah
     db.query(`CREATE TABLE IF NOT EXISTS daftar_sekolah (
         id INT AUTO_INCREMENT PRIMARY KEY, 
@@ -469,7 +471,10 @@ const initDB = () => {
         nama_sekolah VARCHAR(255), 
         alamat TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`);
+    )`, (err) => {
+        if (err) console.error("❌ Error buat tabel daftar_sekolah:", err.message);
+        else console.log("✅ Tabel daftar_sekolah siap");
+    });
     
     // Buat tabel data_santri
     db.query(`CREATE TABLE IF NOT EXISTS data_santri (
@@ -477,7 +482,10 @@ const initDB = () => {
         nama_santri VARCHAR(255), 
         nomor_wa_orangtua VARCHAR(20),
         sekolah_id VARCHAR(50) DEFAULT 'DEFAULT'
-    )`);
+    )`, (err) => {
+        if (err) console.error("❌ Error buat tabel data_santri:", err.message);
+        else console.log("✅ Tabel data_santri siap");
+    });
     
     // Buat tabel setoran
     db.query(`CREATE TABLE IF NOT EXISTS setoran (
@@ -490,13 +498,19 @@ const initDB = () => {
         keterangan TEXT, 
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         sekolah_id VARCHAR(50) DEFAULT 'DEFAULT'
-    )`);
+    )`, (err) => {
+        if (err) console.error("❌ Error buat tabel setoran:", err.message);
+        else console.log("✅ Tabel setoran siap");
+    });
     
     // Masukkan data sekolah default
     db.query(`INSERT IGNORE INTO daftar_sekolah (kode_sekolah, nama_sekolah, alamat) 
-        VALUES ('MI001', 'MI HIDAYATUL MUBTADIEN', 'Bangil, Pasuruan')`);
+        VALUES ('MI001', 'MI HIDAYATUL MUBTADIEN', 'Bangil, Pasuruan')`, (err) => {
+        if (err) console.error("❌ Error insert sekolah default:", err.message);
+        else console.log("✅ Sekolah default MI001 siap");
+    });
     
-    console.log("Database siap dengan multi-sekolah!");
+    console.log("🏁 Database initialization complete!");
 };
 initDB();
 
