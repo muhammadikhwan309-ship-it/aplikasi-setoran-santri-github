@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: aplikasi-setoran-santri
-    runtime: node
-    buildCommand: npm install
-    startCommand: node server.js
-    envVars:
-      - key: DATABASE_URL
-        value: mysql://avnadmin:AVNS_sK4ad2m8DVSOUBIyZGI@mysql-1d002628-muhammadikhwan309-5e52.d.aivencloud.com:19436/defaultdb?ssl-mode=REQUIRED
