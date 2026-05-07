@@ -394,7 +394,50 @@ async function loadDashboard() {
             }
         };
     }
-    
+
+    // ============ PDF REKAP BULANAN ============
+    const btnRekapBulan = document.getElementById("btnRekapBulan");
+    if (btnRekapBulan) {
+        btnRekapBulan.onclick = async () => {
+            const bulan = document.getElementById("bulanFilter")?.value;
+            const tahun = document.getElementById("tahunFilter")?.value;
+            if (!bulan || !tahun) return alert("Pilih bulan dan tahun terlebih dahulu!");
+
+            const res = await fetch(`${BASE_URL}/api/rekap-pdf-bulanan?tahun=${tahun}&bulan=${bulan}`);
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `rekap_bulanan_${tahun}_${String(bulan).padStart(2,'0')}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+                alert("✓ PDF Rekap Bulanan siap!");
+            } else {
+                alert("Gagal buat PDF atau tidak ada data pada bulan tersebut");
+            }
+        };
+    }
+
+    // ============ HAPUS REKAPAN BULANAN ============
+    const btnHapusRekapanBulan = document.getElementById("btnHapusRekapanBulan");
+    if (btnHapusRekapanBulan) {
+        btnHapusRekapanBulan.onclick = async () => {
+            const bulan = document.getElementById("bulanFilter")?.value;
+            const tahun = document.getElementById("tahunFilter")?.value;
+            if (!bulan || !tahun) return alert("Pilih bulan dan tahun terlebih dahulu!");
+
+            const namaBulan = document.getElementById("bulanFilter").options[document.getElementById("bulanFilter").selectedIndex].text;
+            if (!confirm(`Hapus semua data setoran bulan ${namaBulan} ${tahun}? Tindakan ini tidak bisa dibatalkan!`)) return;
+
+            const res = await fetch(`${BASE_URL}/api/hapus-rekapan-bulan/${tahun}/${bulan}`, { method: "DELETE" });
+            const data = await res.json();
+            alert(data.message || "Selesai");
+            loadSetoran();
+            loadDashboard();
+        };
+    }
+
     // ============ LOAD DATA AWAL ============
     loadSantri();
     loadSetoran();
