@@ -12,70 +12,6 @@ app.use(express.json());
 // Static Files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ============ FUNGSI INISIALISASI DATABASE ============
-const initDB = () => {
-    console.log("🔧 Membuat tabel database...");
-    
-    // Buat tabel daftar_sekolah
-    const sql1 = `CREATE TABLE IF NOT EXISTS daftar_sekolah (
-        id INT AUTO_INCREMENT PRIMARY KEY, 
-        kode_sekolah VARCHAR(50) UNIQUE, 
-        nama_sekolah VARCHAR(255), 
-        alamat TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`;
-    
-    db.query(sql1, (err) => {
-        if (err) console.error("❌ Error tabel daftar_sekolah:", err.message);
-        else console.log("✅ Tabel daftar_sekolah siap");
-    });
-    
-    // Buat tabel data_santri
-    const sql2 = `CREATE TABLE IF NOT EXISTS data_santri (
-        id INT AUTO_INCREMENT PRIMARY KEY, 
-        nama_santri VARCHAR(255), 
-        nomor_wa_orangtua VARCHAR(20),
-        sekolah_id VARCHAR(50) DEFAULT 'MI001'
-    )`;
-    
-    db.query(sql2, (err) => {
-        if (err) console.error("❌ Error tabel data_santri:", err.message);
-        else console.log("✅ Tabel data_santri siap");
-    });
-    
-    // Buat tabel setoran
-    const sql3 = `CREATE TABLE IF NOT EXISTS setoran (
-        id INT AUTO_INCREMENT PRIMARY KEY, 
-        nama VARCHAR(255), 
-        nomor_wa VARCHAR(20), 
-        surah VARCHAR(100), 
-        ayat VARCHAR(50), 
-        nilai INT, 
-        keterangan TEXT, 
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        sekolah_id VARCHAR(50) DEFAULT 'MI001'
-    )`;
-    
-    db.query(sql3, (err) => {
-        if (err) console.error("❌ Error tabel setoran:", err.message);
-        else console.log("✅ Tabel setoran siap");
-    });
-    
-    // Masukkan data sekolah default
-    const sql4 = `INSERT IGNORE INTO daftar_sekolah (kode_sekolah, nama_sekolah, alamat) 
-        VALUES ('MI001', 'MI HIDAYATUL MUBTADIEN', 'Bangil, Pasuruan')`;
-    
-    db.query(sql4, (err) => {
-        if (err) console.error("❌ Error insert sekolah:", err.message);
-        else console.log("✅ Sekolah MI001 siap");
-    });
-};
-
-// Jalankan inisialisasi database setelah koneksi siap
-setTimeout(() => {
-    initDB();
-}, 2000);
-
 // ============ API MULTI-SEKOLAH ============
 
 // Daftar sekolah baru
@@ -93,7 +29,7 @@ app.post("/api/sekolah/daftar", (req, res) => {
                 if (err.code === 'ER_DUP_ENTRY') {
                     return res.status(400).json({ message: "Kode sekolah sudah dipakai" });
                 }
-                return res.status(500).json({ message: "Gagal daftar sekolah", error: err.message });
+                return res.status(500).json({ message: "Gagal daftar sekolah" });
             }
             res.json({ message: "Sekolah berhasil didaftarkan", kode_sekolah: kode_sekolah.toUpperCase() });
         });
@@ -103,7 +39,7 @@ app.post("/api/sekolah/daftar", (req, res) => {
 app.get("/api/sekolah/cek/:kode", (req, res) => {
     const kode = req.params.kode.toUpperCase();
     db.query("SELECT * FROM daftar_sekolah WHERE kode_sekolah = ?", [kode], (err, rows) => {
-        if (err) return res.status(500).json({ valid: false, error: err.message });
+        if (err) return res.status(500).json({ valid: false });
         if (rows.length > 0) {
             res.json({ valid: true, nama_sekolah: rows[0].nama_sekolah, alamat: rows[0].alamat });
         } else {
@@ -116,8 +52,7 @@ app.get("/api/sekolah/cek/:kode", (req, res) => {
 app.get("/api/sekolah/info/:kode", (req, res) => {
     const kode = req.params.kode.toUpperCase();
     db.query("SELECT * FROM daftar_sekolah WHERE kode_sekolah = ?", [kode], (err, rows) => {
-        if (err) return res.status(500).json({ message: "Error", error: err.message });
-        if (rows.length === 0) return res.status(404).json({ message: "Sekolah tidak ditemukan" });
+        if (err || rows.length === 0) return res.status(404).json({ message: "Sekolah tidak ditemukan" });
         res.json(rows[0]);
     });
 });
@@ -128,36 +63,20 @@ app.get("/api/santri", (req, res) => {
     if (!sekolah_id) return res.status(400).json({ message: "Sekolah ID diperlukan" });
     
     db.query("SELECT * FROM data_santri WHERE sekolah_id = ? ORDER BY nama_santri ASC", [sekolah_id], (err, rows) => {
-        if (err) return res.status(500).json({ message: "Gagal", error: err.message });
+        if (err) { console.error("DB Error:", err.message); return res.status(500).json({ message: "Gagal", error: err.message }); }
         res.json(rows);
     });
 });
 
 app.post("/api/santri", (req, res) => {
     const { nama_santri, nomor_wa_orangtua, sekolah_id } = req.body;
+    if (!sekolah_id) return res.status(400).json({ message: "Sekolah ID diperlukan" });
     
-    console.log("📝 Data santri masuk:", { nama_santri, nomor_wa_orangtua, sekolah_id });
-    
-    if (!sekolah_id) {
-        return res.status(400).json({ message: "Sekolah ID diperlukan" });
-    }
-    
-    if (!nama_santri || !nomor_wa_orangtua) {
-        return res.status(400).json({ message: "Nama santri dan nomor WA wajib diisi" });
-    }
-    
-    db.query(
-        "INSERT INTO data_santri (nama_santri, nomor_wa_orangtua, sekolah_id) VALUES (?, ?, ?)", 
-        [nama_santri, nomor_wa_orangtua, sekolah_id], 
-        (err, result) => {
-            if (err) {
-                console.error("❌ Error insert:", err.message);
-                return res.status(500).json({ message: "Gagal", error: err.message });
-            }
-            console.log("✅ Santri berhasil ditambah, ID:", result.insertId);
-            res.json({ message: "Sukses", id: result.insertId });
-        }
-    );
+    db.query("INSERT INTO data_santri (nama_santri, nomor_wa_orangtua, sekolah_id) VALUES (?, ?, ?)", 
+        [nama_santri, nomor_wa_orangtua, sekolah_id], (err) => {
+            if (err) { console.error("DB Error:", err.message); return res.status(500).json({ message: "Gagal", error: err.message }); }
+            res.json({ message: "Sukses" });
+        });
 });
 
 // Edit nomor WA santri
@@ -171,7 +90,7 @@ app.put("/api/santri/:id", (req, res) => {
         "UPDATE data_santri SET nomor_wa_orangtua = ? WHERE id = ? AND sekolah_id = ?",
         [nomor_wa_orangtua, id, sekolah_id],
         (err, result) => {
-            if (err) return res.status(500).json({ message: "Gagal update", error: err.message });
+            if (err) { console.error("DB Error:", err.message); return res.status(500).json({ message: "Gagal update", error: err.message }); }
             if (result.affectedRows === 0) return res.status(404).json({ message: "Santri tidak ditemukan" });
             res.json({ message: "Nomor WA berhasil diupdate" });
         }
@@ -183,7 +102,7 @@ app.delete("/api/santri/:id", (req, res) => {
     const { sekolah_id } = req.query;
     
     db.query("SELECT nama_santri FROM data_santri WHERE id = ? AND sekolah_id = ?", [id, sekolah_id], (err, rows) => {
-        if (err) return res.status(500).json({ message: "Gagal cari santri" });
+        if (err) { console.error("DB Error:", err.message); return res.status(500).json({ message: "Gagal cari santri", error: err.message }); }
         if (rows.length === 0) return res.status(404).json({ message: "Santri tidak ditemukan" });
         
         const namaSantri = rows[0].nama_santri;
@@ -192,7 +111,7 @@ app.delete("/api/santri/:id", (req, res) => {
             if (err) console.error("Gagal hapus setoran:", err);
             
             db.query("DELETE FROM data_santri WHERE id = ? AND sekolah_id = ?", [id, sekolah_id], (err) => {
-                if (err) return res.status(500).json({ message: "Gagal hapus santri" });
+                if (err) { console.error("DB Error:", err.message); return res.status(500).json({ message: "Gagal hapus santri", error: err.message }); }
                 res.json({ message: "Santri dan semua setorannya berhasil dihapus" });
             });
         });
@@ -206,7 +125,7 @@ app.post("/api/setoran", (req, res) => {
     
     const sql = "INSERT INTO setoran (nama, nomor_wa, surah, ayat, nilai, keterangan, sekolah_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
     db.query(sql, [nama_santri, nomor_wa_orangtua, surah, ayat, nilai, keterangan, sekolah_id], (err) => {
-        if (err) return res.status(500).json({ message: "Gagal", error: err.message });
+        if (err) { console.error("DB Error:", err.message); return res.status(500).json({ message: "Gagal", error: err.message }); }
         res.json({ message: "Sukses" });
     });
 });
@@ -241,7 +160,7 @@ app.delete("/api/dashboard/hapus/:nama", (req, res) => {
     if (!sekolah_id) return res.status(400).json({ message: "Sekolah ID diperlukan" });
     
     db.query("DELETE FROM setoran WHERE nama = ? AND sekolah_id = ?", [nama, sekolah_id], (err) => {
-        if (err) return res.status(500).json({ message: "Gagal hapus" });
+        if (err) { console.error("DB Error:", err.message); return res.status(500).json({ message: "Gagal hapus", error: err.message }); }
         res.json({ message: "Berhasil hapus semua setoran" });
     });
 });
@@ -274,7 +193,7 @@ app.get("/api/setoran/filter", (req, res) => {
     sql += " ORDER BY created_at DESC";
     
     db.query(sql, params, (err, rows) => {
-        if (err) return res.status(500).json({ message: "Gagal", error: err.message });
+        if (err) { console.error("DB Error:", err.message); return res.status(500).json({ message: "Gagal", error: err.message }); }
         res.json(rows);
     });
 });
@@ -284,7 +203,7 @@ app.delete("/api/setoran/:id", (req, res) => {
     const { sekolah_id } = req.query;
     
     db.query("DELETE FROM setoran WHERE id = ? AND sekolah_id = ?", [id, sekolah_id], (err) => {
-        if (err) return res.status(500).json({ message: "Gagal hapus" });
+        if (err) { console.error("DB Error:", err.message); return res.status(500).json({ message: "Gagal hapus", error: err.message }); }
         res.json({ message: "Berhasil" });
     });
 });
@@ -306,10 +225,12 @@ app.get("/api/rekap-pdf", (req, res) => {
         res.setHeader("Content-Disposition", `inline; filename=rekap_harian_${today}.pdf`);
         doc.pipe(res);
         
+        // Ambil info sekolah
         db.query("SELECT * FROM daftar_sekolah WHERE kode_sekolah = ?", [sekolah_id], (errSekolah, sekolahRow) => {
             const namaSekolah = (sekolahRow && sekolahRow[0]) ? sekolahRow[0].nama_sekolah : 'MADRASAH';
             const alamatSekolah = (sekolahRow && sekolahRow[0] && sekolahRow[0].alamat) ? sekolahRow[0].alamat : '';
             
+            // Logo
             const logoPath = path.join(__dirname, 'public', 'images', 'logo.png');
             let headerStartY = 40;
             if (fs.existsSync(logoPath)) {
@@ -319,8 +240,10 @@ app.get("/api/rekap-pdf", (req, res) => {
                 headerStartY += 75;
             }
         
+            // Header
             doc.fontSize(14).font('Helvetica-Bold');
             doc.text(namaSekolah.toUpperCase(), 50, headerStartY, { align: 'center', width: doc.page.width - 100 });
+        
             doc.fontSize(12).font('Helvetica');
             doc.text('LAPORAN SETORAN SISWA', 50, headerStartY + 22, { align: 'center', width: doc.page.width - 100 });
         
@@ -332,6 +255,7 @@ app.get("/api/rekap-pdf", (req, res) => {
             const lineY = headerStartY + 62;
             doc.moveTo(35, lineY).lineTo(560, lineY).lineWidth(1).stroke();
         
+            // Tabel
             const startX = 35;
             const colWidths = [25, 130, 130, 100, 140];
             const colX = colWidths.reduce((acc, w, i) => {
@@ -379,6 +303,7 @@ app.get("/api/rekap-pdf", (req, res) => {
             });
         
             doc.moveTo(startX, currentY).lineTo(startX + tableWidth, currentY).lineWidth(0.5).stroke();
+        
             doc.fontSize(8).font('Helvetica').fillColor('#555555');
             doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, startX, currentY + 10);
             if (alamatSekolah) {
@@ -517,14 +442,53 @@ app.delete("/api/hapus-rekapan-bulan/:tahun/:bulan", (req, res) => {
     });
 });
 
-// ============ ROUTE UNTUK SEMUA HALAMAN ============
+// ============ DATABASE INIT ============
+const initDB = () => {
+    db.query(`CREATE TABLE IF NOT EXISTS daftar_sekolah (
+        id INT AUTO_INCREMENT PRIMARY KEY, 
+        kode_sekolah VARCHAR(50) UNIQUE, 
+        nama_sekolah VARCHAR(255), 
+        alamat TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+        if (err) { console.error("❌ Gagal buat tabel daftar_sekolah:", err.message); return; }
+        console.log("✅ Tabel daftar_sekolah OK");
+        db.query(`CREATE TABLE IF NOT EXISTS data_santri (
+            id INT AUTO_INCREMENT PRIMARY KEY, 
+            nama_santri VARCHAR(255), 
+            nomor_wa_orangtua VARCHAR(20),
+            sekolah_id VARCHAR(50) DEFAULT 'DEFAULT'
+        )`, (err) => {
+            if (err) { console.error("❌ Gagal buat tabel data_santri:", err.message); return; }
+            console.log("✅ Tabel data_santri OK");
+            db.query(`CREATE TABLE IF NOT EXISTS setoran (
+                id INT AUTO_INCREMENT PRIMARY KEY, 
+                nama VARCHAR(255), 
+                nomor_wa VARCHAR(20), 
+                surah VARCHAR(100), 
+                ayat VARCHAR(50), 
+                nilai INT, 
+                keterangan TEXT, 
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                sekolah_id VARCHAR(50) DEFAULT 'DEFAULT'
+            )`, (err) => {
+                if (err) { console.error("❌ Gagal buat tabel setoran:", err.message); return; }
+                console.log("✅ Tabel setoran OK");
+                db.query(`INSERT IGNORE INTO daftar_sekolah (kode_sekolah, nama_sekolah, alamat) 
+                    VALUES ('MI001', 'MI HIDAYATUL MUBTADIEN', 'Bangil, Pasuruan')`, (err) => {
+                    if (err) console.error("❌ Gagal insert sekolah default:", err.message);
+                    else console.log("✅ Database siap dengan multi-sekolah!");
+                });
+            });
+        });
+    });
+};
+initDB();
+
+// --- PENTING: TARUH PALING BAWAH ---
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ============ START SERVER ============
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server nyala di port ${PORT}`);
-    console.log(`🌐 Akses di: https://aplikasi-setoran-santri-github.onrender.com`);
-});
+app.listen(PORT, '0.0.0.0', () => console.log(`Server nyala di port ${PORT}`));
