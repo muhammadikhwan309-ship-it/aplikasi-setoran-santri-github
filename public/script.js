@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (savedKode && savedNama) {
         SEKOLAH_ID = savedKode;
         NAMA_SEKOLAH = savedNama;
+        console.log("✅ Session ditemukan, SEKOLAH_ID:", SEKOLAH_ID);
         tampilkanAplikasi();
     } else {
         tampilkanLayarKode();
@@ -50,12 +51,14 @@ function tampilkanLayarKode() {
                 NAMA_SEKOLAH = data.nama_sekolah;
                 sessionStorage.setItem("sekolah_id",   kode);
                 sessionStorage.setItem("nama_sekolah", data.nama_sekolah);
+                console.log("✅ Login berhasil, SEKOLAH_ID:", SEKOLAH_ID);
                 tampilkanAplikasi();
             } else {
                 errorMsg.textContent = "Kode sekolah tidak ditemukan. Coba lagi.";
                 errorMsg.style.display = "block";
             }
         } catch (err) {
+            console.error("Login error:", err);
             errorMsg.textContent = "Gagal terhubung ke server.";
             errorMsg.style.display = "block";
         }
@@ -82,6 +85,8 @@ function tampilkanAplikasi() {
         btnLogout.onclick = () => {
             sessionStorage.removeItem("sekolah_id");
             sessionStorage.removeItem("nama_sekolah");
+            SEKOLAH_ID = null;
+            NAMA_SEKOLAH = "";
             location.reload();
         };
     }
@@ -106,6 +111,16 @@ function nilaiToBadge(nilai) {
 
 // ============ INISIALISASI SEMUA FITUR APP ============
 function inisialisasiApp() {
+    console.log("🚀 inisialisasiApp dipanggil, SEKOLAH_ID:", SEKOLAH_ID);
+
+    // Guard: jika SEKOLAH_ID tidak ada, jangan lanjut
+    if (!SEKOLAH_ID) {
+        console.error("❌ SEKOLAH_ID kosong saat inisialisasiApp!");
+        alert("Sesi tidak valid. Silakan login ulang.");
+        sessionStorage.clear();
+        location.reload();
+        return;
+    }
 
     // ===== ELEMEN TAB =====
     const tabSetoranBtn   = document.getElementById("tabSetoranBtn");
@@ -166,7 +181,7 @@ function inisialisasiApp() {
     tabSantriBtn.onclick    = aktifkanSantri;
     if (tabDashboardBtn) tabDashboardBtn.onclick = aktifkanDashboard;
 
-    // ===== MODAL =====
+    // ===== MODAL EDIT WA =====
     function bukaEditModal(id, nama, nomorWa) {
         editIdSantri      = id;
         editNama.value    = nama;
@@ -189,21 +204,14 @@ function inisialisasiApp() {
     if (btnSimpanEdit) {
         btnSimpanEdit.onclick = async () => {
             const nomorBaru = editNomorWa.value.trim();
-            if (!nomorBaru) {
-                alert("Nomor WA tidak boleh kosong!");
-                return;
-            }
+            if (!nomorBaru) { alert("Nomor WA tidak boleh kosong!"); return; }
             try {
                 btnSimpanEdit.disabled = true;
                 btnSimpanEdit.innerHTML = "⏳ Menyimpan...";
-
                 const res = await fetch(`${BASE_URL}/api/santri/${editIdSantri}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        nomor_wa_orangtua: nomorBaru,
-                        sekolah_id: SEKOLAH_ID
-                    })
+                    body: JSON.stringify({ nomor_wa_orangtua: nomorBaru, sekolah_id: SEKOLAH_ID })
                 });
                 const data = await res.json();
                 if (res.ok) {
@@ -225,9 +233,14 @@ function inisialisasiApp() {
     // ===== LOAD SANTRI =====
     async function loadSantri() {
         try {
+            console.log("📡 loadSantri dengan SEKOLAH_ID:", SEKOLAH_ID);
             const res  = await fetch(`${BASE_URL}/api/santri?sekolah_id=${SEKOLAH_ID}`);
-            if (!res.ok) throw new Error("Respon server error: " + res.status);
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || "Respon server error: " + res.status);
+            }
             const data = await res.json();
+            console.log("✅ Data santri diterima:", data.length, "santri");
             daftarSantri = data;
 
             // Update tabel santri
@@ -242,17 +255,13 @@ function inisialisasiApp() {
                         row.insertCell(0).textContent = s.id;
                         row.insertCell(1).textContent = s.nama_santri;
                         row.insertCell(2).textContent = s.nomor_wa_orangtua || '-';
-
                         const btnCell = row.insertCell(3);
-
                         const editBtn = document.createElement("button");
                         editBtn.innerHTML = "✏️ Edit";
                         editBtn.className = "btn btn-amber btn-sm";
                         editBtn.onclick = () => bukaEditModal(s.id, s.nama_santri, s.nomor_wa_orangtua || '');
                         btnCell.appendChild(editBtn);
-
                         btnCell.appendChild(document.createTextNode(" "));
-
                         const delBtn = document.createElement("button");
                         delBtn.innerHTML = "🗑️ Hapus";
                         delBtn.className = "btn btn-danger btn-sm";
@@ -262,21 +271,20 @@ function inisialisasiApp() {
                 }
             }
 
-            // Update dropdown pilih santri di form setoran
+            // Update dropdown pilih santri
             const selectPilih = document.getElementById("pilihSantri");
             if (selectPilih) {
                 selectPilih.innerHTML = '<option value="">-- Pilih Santri --</option>';
                 data.forEach(s => {
                     const opt = document.createElement("option");
                     opt.value = s.nama_santri;
-                    // Simpan nomor WA, string kosong jika null/undefined
                     opt.setAttribute("data-nomor", s.nomor_wa_orangtua || "");
                     opt.textContent = s.nama_santri;
                     selectPilih.appendChild(opt);
                 });
             }
 
-            // Update dropdown filter santri di riwayat
+            // Update dropdown filter santri
             const selectFilter = document.getElementById("filterSantri");
             if (selectFilter) {
                 const currentVal = selectFilter.value;
@@ -291,7 +299,7 @@ function inisialisasiApp() {
             }
 
         } catch (err) {
-            console.error("loadSantri error:", err);
+            console.error("❌ loadSantri error:", err);
         }
     }
 
@@ -299,15 +307,10 @@ function inisialisasiApp() {
     async function hapusSantri(id) {
         if (!confirm("Hapus santri ini beserta semua setorannya?")) return;
         try {
-            const res = await fetch(`${BASE_URL}/api/santri/${id}?sekolah_id=${SEKOLAH_ID}`, {
-                method: "DELETE"
-            });
+            const res = await fetch(`${BASE_URL}/api/santri/${id}?sekolah_id=${SEKOLAH_ID}`, { method: "DELETE" });
             const data = await res.json();
-            if (res.ok) {
-                alert("✓ " + data.message);
-            } else {
-                alert("Gagal: " + (data.message || "Error server"));
-            }
+            if (res.ok) { alert("✓ " + data.message); }
+            else { alert("Gagal: " + (data.message || "Error server")); }
         } catch (err) {
             alert("Gagal terhubung ke server.");
         }
@@ -320,14 +323,21 @@ function inisialisasiApp() {
     const tambahBtn = document.getElementById("tambahSantriBtn");
     if (tambahBtn) {
         tambahBtn.onclick = async () => {
+            // Pastikan SEKOLAH_ID ada sebelum kirim
+            if (!SEKOLAH_ID) {
+                alert("Sesi tidak valid. Silakan logout dan login ulang.");
+                return;
+            }
+
             const nama = document.getElementById("namaSantriBaru").value.trim();
             const wa   = document.getElementById("nomorWaBaru").value.trim();
 
-            // Hanya nama yang wajib, WA boleh kosong
             if (!nama) {
                 alert("Nama santri tidak boleh kosong!");
                 return;
             }
+
+            console.log("📤 Tambah santri:", { nama, wa, sekolah_id: SEKOLAH_ID });
 
             try {
                 tambahBtn.disabled = true;
@@ -344,6 +354,7 @@ function inisialisasiApp() {
                 });
 
                 const data = await res.json();
+                console.log("📥 Response tambah santri:", res.status, JSON.stringify(data));
 
                 if (res.ok) {
                     alert("✓ Santri berhasil ditambahkan!");
@@ -351,16 +362,18 @@ function inisialisasiApp() {
                     document.getElementById("nomorWaBaru").value    = "";
                     loadSantri();
                 } else {
-                    alert("Gagal: " + (data.message || "Error server"));
+                    alert("Gagal menambah santri:\n" + (data.message || "Error tidak diketahui"));
                 }
             } catch (err) {
-                console.error("tambahSantri error:", err);
-                alert("Gagal terhubung ke server.");
+                console.error("❌ tambahSantri fetch error:", err);
+                alert("Gagal terhubung ke server. Periksa koneksi internet Anda.");
             } finally {
                 tambahBtn.disabled = false;
                 tambahBtn.innerHTML = "📝 Tambah Santri";
             }
         };
+    } else {
+        console.error("❌ Element tambahSantriBtn tidak ditemukan di DOM!");
     }
 
     // ===== LOAD SETORAN =====
@@ -389,7 +402,6 @@ function inisialisasiApp() {
                         row.insertCell(2).textContent = item.ayat;
                         row.insertCell(3).innerHTML   = nilaiToBadge(item.nilai);
                         row.insertCell(4).textContent = item.keterangan;
-
                         const hapusBtn = document.createElement("button");
                         hapusBtn.innerHTML = "🗑️ Hapus";
                         hapusBtn.className = "btn btn-danger btn-sm";
@@ -399,7 +411,7 @@ function inisialisasiApp() {
                 }
             }
         } catch (err) {
-            console.error("loadSetoran error:", err);
+            console.error("❌ loadSetoran error:", err);
         }
     }
 
@@ -407,14 +419,9 @@ function inisialisasiApp() {
     async function hapusSetoran(id) {
         if (!confirm("Hapus setoran ini?")) return;
         try {
-            const res = await fetch(`${BASE_URL}/api/setoran/${id}?sekolah_id=${SEKOLAH_ID}`, {
-                method: "DELETE"
-            });
+            const res = await fetch(`${BASE_URL}/api/setoran/${id}?sekolah_id=${SEKOLAH_ID}`, { method: "DELETE" });
             const data = await res.json();
-            if (!res.ok) {
-                alert("Gagal hapus: " + (data.message || "Error server"));
-                return;
-            }
+            if (!res.ok) alert("Gagal hapus: " + (data.message || "Error server"));
         } catch (err) {
             alert("Gagal terhubung ke server.");
         }
@@ -467,8 +474,7 @@ function inisialisasiApp() {
                     body: JSON.stringify({
                         nama_santri: nama,
                         nomor_wa_orangtua: wa,
-                        surah,
-                        ayat,
+                        surah, ayat,
                         nilai: nilaiInt,
                         keterangan,
                         sekolah_id: SEKOLAH_ID
@@ -483,21 +489,18 @@ function inisialisasiApp() {
                         const pesan = `📚 *LAPORAN SETORAN QURAN*\n\nNama    : ${nama}\nSurah   : ${surah}\nAyat    : ${ayat}\nNilai   : ${nilaiInt}\nKet     : ${keterangan}\n\nBarakallahu fiikum 🌙`;
                         window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, "_blank");
                     }
-
-                    alert("✓ Data setoran berhasil disimpan!" + (wa ? "" : "\n(Nomor WA tidak tersedia, pesan tidak dikirim)"));
-
+                    alert("✓ Data setoran berhasil disimpan!" + (wa ? "" : "\n(Nomor WA tidak ada, pesan tidak dikirim)"));
                     select.value = "";
                     document.getElementById("surah").value = "";
                     document.getElementById("ayat").value  = "";
                     document.getElementById("nilai").value = "";
-
                     loadSetoran();
                     loadDashboard();
                 } else {
                     alert("Gagal menyimpan: " + (data.message || "Error server"));
                 }
             } catch (err) {
-                console.error("saveSetoran error:", err);
+                console.error("❌ saveSetoran error:", err);
                 alert("Gagal terhubung ke server.");
             } finally {
                 saveBtn.disabled = false;
@@ -513,18 +516,14 @@ function inisialisasiApp() {
             try {
                 pdfHarianBtn.disabled = true;
                 pdfHarianBtn.innerHTML = "⏳ Membuat PDF...";
-
                 const res = await fetch(`${BASE_URL}/api/rekap-pdf?sekolah_id=${SEKOLAH_ID}`);
                 if (res.ok) {
                     const blob = await res.blob();
                     const url  = URL.createObjectURL(blob);
                     const a    = document.createElement("a");
-                    a.href     = url;
-                    a.download = "rekap_harian.pdf";
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
+                    a.href = url; a.download = "rekap_harian.pdf";
+                    document.body.appendChild(a); a.click();
+                    document.body.removeChild(a); URL.revokeObjectURL(url);
                     alert("✓ PDF berhasil diunduh!");
                 } else {
                     alert("Gagal membuat PDF. Pastikan ada data setoran hari ini.");
@@ -554,13 +553,11 @@ function inisialisasiApp() {
                     data.forEach((item, i) => {
                         const row = tbody.insertRow();
                         if (i === 0) row.style.background = "#fef3c7";
-
                         const peringkat = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1);
                         const predikat  = item.rata_rata >= 85 ? "🏆 Sangat Baik"
                                         : item.rata_rata >= 70 ? "👍 Baik"
                                         : item.rata_rata >= 60 ? "📖 Cukup"
                                         : "⚠️ Kurang";
-
                         row.insertCell(0).textContent = peringkat;
                         row.insertCell(1).textContent = item.nama_santri || item.nama;
                         row.insertCell(2).textContent = item.total_setoran;
@@ -572,7 +569,7 @@ function inisialisasiApp() {
                 }
             }
         } catch (err) {
-            console.error("loadDashboard error:", err);
+            console.error("❌ loadDashboard error:", err);
         }
     }
 
