@@ -87,19 +87,108 @@ app.delete("/api/dashboard/hapus/:nama", (req, res) => {
     });
 });
 // ============ FITUR PDF ============
+const fs = require('fs');
+const path = require('path');
+
 app.get("/api/rekap-pdf", (req, res) => {
     const today = new Date().toISOString().split('T')[0];
-    db.query("SELECT * FROM setoran WHERE DATE(created_at) = ?", [today], (err, rows) => {
-        if (err || rows.length === 0) return res.status(404).send("Kosong");
-        const doc = new PDFDocument();
+    
+    db.query(`
+        SELECT s.*, ds.nomor_wa_orangtua 
+        FROM setoran s
+        LEFT JOIN data_santri ds ON s.nama = ds.nama_santri
+        WHERE DATE(s.created_at) = ? 
+        ORDER BY s.created_at DESC
+    `, [today], (err, rows) => {
+        if (err || rows.length === 0) {
+            return res.status(404).send("Tidak ada data setoran hari ini");
+        }
+        
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
         res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename=rekap_harian_${today}.pdf`);
         doc.pipe(res);
-        doc.text("LAPORAN SETORAN");
-        rows.forEach(r => doc.text(`${r.nama} - ${r.surah}`));
+        
+        // ===== LOGO =====
+        const logoPath = path.join(__dirname, 'public', 'images', 'logo.png');
+        if (fs.existsSync(logoPath)) {
+            const pageWidth = doc.page.width;
+            const logoWidth = 70;
+            const logoX = (pageWidth - logoWidth) / 2;
+            doc.image(logoPath, logoX, 40, { width: logoWidth });
+            doc.moveDown(4);
+        } else {
+            doc.moveDown(2);
+        }
+        
+        // ===== NAMA MADRASAH =====
+        doc.fontSize(14).font('Helvetica-Bold');
+        doc.text('MI HIDAYATUL MUBTADIEN', { align: 'center' });
+        doc.moveDown(0.5);
+        
+        // ===== JUDUL LAPORAN =====
+        doc.fontSize(12).font('Helvetica');
+        doc.text('LAPORAN SETORAN SISWA', { align: 'center' });
+        doc.moveDown(0.5);
+        doc.fontSize(10).font('Helvetica');
+        doc.text(`${new Date(today).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, { align: 'center' });
+        doc.moveDown(1.5);
+        
+        // ===== TABEL =====
+        const startY = doc.y;
+        const colPos = [40, 100, 220, 350, 450];
+        const headers = ['No', 'Nama', 'Surah', 'Ayat', 'Keterangan'];
+        
+        // Header tabel (background abu-abu)
+        doc.rect(35, startY - 3, 530, 20).fill('#e8e8e8');
+        doc.fillColor('#000000');
+        doc.fontSize(9).font('Helvetica-Bold');
+        headers.forEach((header, i) => {
+            doc.text(header, colPos[i], startY);
+        });
+        
+        // Garis bawah header
+        doc.moveTo(35, startY + 17).lineTo(565, startY + 17).lineWidth(0.5).stroke();
+        
+        // ===== ISI TABEL =====
+        let y = startY + 25;
+        doc.fontSize(9).font('Helvetica');
+        
+        rows.forEach((row, index) => {
+            if (y > 750) {
+                doc.addPage();
+                y = 50;
+            }
+            
+            // Konversi nilai ke keterangan dengan KKM 85
+            let keterangan = '';
+            if (row.nilai >= 85) {
+                keterangan = '✅ Lancar';
+            } else {
+                keterangan = '⚠️ Kurang Lancar';
+            }
+            
+            doc.text((index + 1).toString(), colPos[0], y);
+            doc.text(row.nama || '-', colPos[1], y, { width: 110 });
+            doc.text(row.surah || '-', colPos[2], y, { width: 120 });
+            doc.text(row.ayat || '-', colPos[3], y, { width: 90 });
+            doc.text(keterangan, colPos[4], y);
+            
+            y += 22;
+        });
+        
+        // ===== GARIS PENUTUP =====
+        doc.moveTo(35, y + 2).lineTo(565, y + 2).stroke();
+        
+        // ===== FOOTER =====
+        const pageHeight = doc.page.height;
+        doc.fontSize(8).font('Helvetica');
+        doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 35, pageHeight - 40);
+        doc.text('MI Hidayatul Mubtadiien - Bangil, Pasuruan', 35, pageHeight - 25, { align: 'center', width: 530 });
+        
         doc.end();
     });
 });
-
 // ============ DATABASE INIT ============
 const initDB = () => {
     db.query(`CREATE TABLE IF NOT EXISTS data_santri (id INT AUTO_INCREMENT PRIMARY KEY, nama_santri VARCHAR(255), nomor_wa_orangtua VARCHAR(20))`);
