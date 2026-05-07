@@ -113,7 +113,6 @@ function nilaiToBadge(nilai) {
 function inisialisasiApp() {
     console.log("🚀 inisialisasiApp dipanggil, SEKOLAH_ID:", SEKOLAH_ID);
 
-    // Guard: jika SEKOLAH_ID tidak ada, jangan lanjut
     if (!SEKOLAH_ID) {
         console.error("❌ SEKOLAH_ID kosong saat inisialisasiApp!");
         alert("Sesi tidak valid. Silakan login ulang.");
@@ -243,7 +242,6 @@ function inisialisasiApp() {
             console.log("✅ Data santri diterima:", data.length, "santri");
             daftarSantri = data;
 
-            // Update tabel santri
             const tbody = document.getElementById("santriTableBody");
             if (tbody) {
                 tbody.innerHTML = "";
@@ -271,7 +269,6 @@ function inisialisasiApp() {
                 }
             }
 
-            // Update dropdown pilih santri
             const selectPilih = document.getElementById("pilihSantri");
             if (selectPilih) {
                 selectPilih.innerHTML = '<option value="">-- Pilih Santri --</option>';
@@ -284,7 +281,6 @@ function inisialisasiApp() {
                 });
             }
 
-            // Update dropdown filter santri
             const selectFilter = document.getElementById("filterSantri");
             if (selectFilter) {
                 const currentVal = selectFilter.value;
@@ -323,7 +319,6 @@ function inisialisasiApp() {
     const tambahBtn = document.getElementById("tambahSantriBtn");
     if (tambahBtn) {
         tambahBtn.onclick = async () => {
-            // Pastikan SEKOLAH_ID ada sebelum kirim
             if (!SEKOLAH_ID) {
                 alert("Sesi tidak valid. Silakan logout dan login ulang.");
                 return;
@@ -366,14 +361,12 @@ function inisialisasiApp() {
                 }
             } catch (err) {
                 console.error("❌ tambahSantri fetch error:", err);
-                alert("Gagal terhubung ke server. Periksa koneksi internet Anda.");
+                alert("Gagal terhubung ke server.");
             } finally {
                 tambahBtn.disabled = false;
                 tambahBtn.innerHTML = "📝 Tambah Santri";
             }
         };
-    } else {
-        console.error("❌ Element tambahSantriBtn tidak ditemukan di DOM!");
     }
 
     // ===== LOAD SETORAN =====
@@ -484,7 +477,6 @@ function inisialisasiApp() {
                 const data = await res.json();
 
                 if (res.ok) {
-                    // Kirim WA hanya jika nomor tersedia
                     if (wa) {
                         const pesan = `📚 *LAPORAN SETORAN QURAN*\n\nNama    : ${nama}\nSurah   : ${surah}\nAyat    : ${ayat}\nNilai   : ${nilaiInt}\nKet     : ${keterangan}\n\nBarakallahu fiikum 🌙`;
                         window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, "_blank");
@@ -571,6 +563,87 @@ function inisialisasiApp() {
         } catch (err) {
             console.error("❌ loadDashboard error:", err);
         }
+    }
+
+    // ===== REKAP BULANAN =====
+    const pdfBulananBtn = document.getElementById("pdfBulananBtn");
+    const hapusBulananBtn = document.getElementById("hapusBulananBtn");
+    const bulanSelect = document.getElementById("bulanSelect");
+    const tahunInput = document.getElementById("tahunInput");
+
+    if (pdfBulananBtn) {
+        pdfBulananBtn.onclick = async () => {
+            const bulan = bulanSelect.value;
+            const tahun = tahunInput.value;
+            const sekolah_id = SEKOLAH_ID;
+            
+            if (!bulan || !tahun) {
+                alert("Pilih bulan dan tahun!");
+                return;
+            }
+            
+            try {
+                pdfBulananBtn.disabled = true;
+                pdfBulananBtn.textContent = "⏳ Membuat PDF...";
+                
+                const res = await fetch(`${BASE_URL}/api/rekap-bulan-pdf/${tahun}/${bulan}?sekolah_id=${sekolah_id}`);
+                
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `rekap_bulan_${tahun}_${bulan}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    alert("✅ PDF berhasil diunduh!");
+                } else {
+                    const errorText = await res.text();
+                    alert("❌ Gagal: " + errorText);
+                }
+            } catch (err) {
+                alert("❌ Gagal terhubung ke server.");
+            } finally {
+                pdfBulananBtn.disabled = false;
+                pdfBulananBtn.innerHTML = "📄 Download PDF Bulanan";
+            }
+        };
+    }
+
+    if (hapusBulananBtn) {
+        hapusBulananBtn.onclick = async () => {
+            const bulan = bulanSelect.value;
+            const tahun = tahunInput.value;
+            const sekolah_id = SEKOLAH_ID;
+            
+            if (!confirm(`⚠️ Yakin ingin menghapus SEMUA data setoran bulan ${bulan}/${tahun} untuk sekolah ini?`)) return;
+            
+            try {
+                hapusBulananBtn.disabled = true;
+                hapusBulananBtn.textContent = "⏳ Menghapus...";
+                
+                const res = await fetch(`${BASE_URL}/api/hapus-rekapan-bulan/${tahun}/${bulan}?sekolah_id=${sekolah_id}`, {
+                    method: "DELETE"
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    alert("✅ " + data.message);
+                    loadSetoran();
+                    loadDashboard();
+                } else {
+                    alert("❌ Gagal: " + (data.message || "Error server"));
+                }
+            } catch (err) {
+                alert("❌ Gagal terhubung ke server.");
+            } finally {
+                hapusBulananBtn.disabled = false;
+                hapusBulananBtn.innerHTML = "🗑️ Hapus Rekapan Bulan Ini";
+            }
+        };
     }
 
     // ===== LOAD DATA AWAL =====
