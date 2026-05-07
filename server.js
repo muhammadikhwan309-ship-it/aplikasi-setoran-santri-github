@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./db");
 const PDFDocument = require('pdfkit');
+const fs = require('fs');
 const path = require('path');
 const app = express();
 
