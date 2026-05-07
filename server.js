@@ -70,15 +70,33 @@ app.get("/api/santri", (req, res) => {
 
 app.post("/api/santri", (req, res) => {
     const { nama_santri, nomor_wa_orangtua, sekolah_id } = req.body;
-    if (!sekolah_id) return res.status(400).json({ message: "Sekolah ID diperlukan" });
+    console.log("Received data:", { nama_santri, nomor_wa_orangtua, sekolah_id });
     
-    db.query("INSERT INTO data_santri (nama_santri, nomor_wa_orangtua, sekolah_id) VALUES (?, ?, ?)", 
-        [nama_santri, nomor_wa_orangtua, sekolah_id], (err) => {
-            if (err) return res.status(500).json({ message: "Gagal" });
-            res.json({ message: "Sukses" });
-        });
+    if (!sekolah_id) {
+        return res.status(400).json({ message: "Sekolah ID diperlukan" });
+    }
+    
+    if (!nama_santri || !nomor_wa_orangtua) {
+        return res.status(400).json({ message: "Nama santri dan nomor WA wajib diisi" });
+    }
+    
+    db.query(
+        "INSERT INTO data_santri (nama_santri, nomor_wa_orangtua, sekolah_id) VALUES (?, ?, ?)", 
+        [nama_santri, nomor_wa_orangtua, sekolah_id], 
+        (err, result) => {
+            if (err) {
+                console.error("Database error detail:", err);
+                return res.status(500).json({ 
+                    message: "Gagal", 
+                    error: err.message,
+                    sql: err.sql 
+                });
+            }
+            console.log("Insert success, ID:", result.insertId);
+            res.json({ message: "Sukses", id: result.insertId });
+        }
+    );
 });
-
 // Edit nomor WA santri
 app.put("/api/santri/:id", (req, res) => {
     const id = req.params.id;
