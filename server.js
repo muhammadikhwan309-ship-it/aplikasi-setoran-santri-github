@@ -87,7 +87,7 @@ app.delete("/api/dashboard/hapus/:nama", (req, res) => {
     });
 });
 
-// ============ FITUR PDF REKAP HARIAN ============
+// ============ FITUR PDF REKAP HARIAN (TANPA HALAMAN KOSONG) ============
 app.get("/api/rekap-pdf", (req, res) => {
     const today = new Date().toISOString().split('T')[0];
     
@@ -133,51 +133,70 @@ app.get("/api/rekap-pdf", (req, res) => {
         // ===== KONSTANTA TABEL =====
         const colPos = [40, 100, 220, 350, 450];
         const headers = ['No', 'Nama', 'Surah', 'Ayat', 'Keterangan'];
-        const maxRowsPerPage = 25;
-        let rowCounter = 0;
-        let currentPage = 1;
         
-        // Fungsi buat header tabel
-        function drawTableHeader(y) {
-            doc.rect(35, y - 3, 530, 20).fill('#e8e8e8');
-            doc.fillColor('#000000');
-            doc.fontSize(9).font('Helvetica-Bold');
-            headers.forEach((header, i) => {
-                doc.text(header, colPos[i], y);
-            });
-            doc.moveTo(35, y + 17).lineTo(565, y + 17).lineWidth(0.5).stroke();
-            return y + 25;
-        }
+        // Header tabel dengan background abu-abu
+        doc.rect(35, doc.y - 3, 530, 20).fill('#e8e8e8');
+        doc.fillColor('#000000');
+        doc.fontSize(9).font('Helvetica-Bold');
+        headers.forEach((header, i) => {
+            doc.text(header, colPos[i], doc.y);
+        });
+        doc.moveTo(35, doc.y + 17).lineTo(565, doc.y + 17).lineWidth(0.5).stroke();
         
-        let y = drawTableHeader(doc.y);
+        let yPosition = doc.y + 25;
+        let rowCount = 0;
         
         rows.forEach((row, index) => {
-            if (rowCounter >= maxRowsPerPage) {
+            // Cek apakah perlu halaman baru
+            if (yPosition > 750) {
                 doc.addPage();
-                rowCounter = 0;
-                y = drawTableHeader(50);
-                currentPage++;
+                yPosition = 50;
+                rowCount = 0;
+                
+                // Redraw header di halaman baru
+                doc.rect(35, yPosition - 3, 530, 20).fill('#e8e8e8');
+                doc.fillColor('#000000');
+                doc.fontSize(9).font('Helvetica-Bold');
+                headers.forEach((header, i) => {
+                    doc.text(header, colPos[i], yPosition);
+                });
+                doc.moveTo(35, yPosition + 17).lineTo(565, yPosition + 17).lineWidth(0.5).stroke();
+                yPosition = yPosition + 25;
             }
             
             let keterangan = row.nilai >= 85 ? '✅ Lancar' : '⚠️ Kurang Lancar';
             
             doc.fontSize(9).font('Helvetica');
-            doc.text((index + 1).toString(), colPos[0], y);
-            doc.text(row.nama || '-', colPos[1], y, { width: 110 });
-            doc.text(row.surah || '-', colPos[2], y, { width: 120 });
-            doc.text(row.ayat || '-', colPos[3], y, { width: 90 });
-            doc.text(keterangan, colPos[4], y);
+            doc.text((index + 1).toString(), colPos[0], yPosition);
+            doc.text(row.nama || '-', colPos[1], yPosition, { width: 110 });
+            doc.text(row.surah || '-', colPos[2], yPosition, { width: 120 });
             
-            y += 20;
-            rowCounter++;
+            // Handle ayat yang mungkin undefined
+            let ayatText = row.ayat || '-';
+            doc.text(ayatText, colPos[3], yPosition, { width: 90 });
+            doc.text(keterangan, colPos[4], yPosition);
+            
+            yPosition += 20;
+            rowCount++;
         });
         
-        doc.moveTo(35, y + 2).lineTo(565, y + 2).stroke();
+        // Hanya gambar garis penutup jika ada baris
+        if (rows.length > 0) {
+            doc.moveTo(35, yPosition + 2).lineTo(565, yPosition + 2).stroke();
+        }
         
-        const pageHeight = doc.page.height;
-        doc.fontSize(8).font('Helvetica');
-        doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')} | Halaman ${currentPage}`, 35, pageHeight - 40);
-        doc.text('MI Hidayatul Mubtadiien - Bangil, Pasuruan', 35, pageHeight - 25, { align: 'center', width: 530 });
+        // Footer hanya di halaman terakhir
+        if (!doc.page.width) {
+            const pageHeight = doc.page.height;
+            doc.fontSize(8).font('Helvetica');
+            doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 35, pageHeight - 40);
+            doc.text('MI Hidayatul Mubtadiien - Bangil, Pasuruan', 35, pageHeight - 25, { align: 'center', width: 530 });
+        } else {
+            const pageHeight = doc.page.height;
+            doc.fontSize(8).font('Helvetica');
+            doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 35, pageHeight - 40);
+            doc.text('MI Hidayatul Mubtadiien - Bangil, Pasuruan', 35, pageHeight - 25, { align: 'center', width: 530 });
+        }
         
         doc.end();
     });
