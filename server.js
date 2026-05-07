@@ -87,7 +87,7 @@ app.delete("/api/dashboard/hapus/:nama", (req, res) => {
     });
 });
 
-// ============ FITUR PDF REKAP HARIAN (DIPERBAIKI - TIDAK ADA HALAMAN KOSONG) ============
+// ============ FITUR PDF REKAP HARIAN ============
 app.get("/api/rekap-pdf", (req, res) => {
     const today = new Date().toISOString().split('T')[0];
     
@@ -107,7 +107,6 @@ app.get("/api/rekap-pdf", (req, res) => {
         res.setHeader("Content-Disposition", `inline; filename=rekap_harian_${today}.pdf`);
         doc.pipe(res);
         
-        // ===== LOGO =====
         const logoPath = path.join(__dirname, 'public', 'images', 'logo.png');
         if (fs.existsSync(logoPath)) {
             const pageWidth = doc.page.width;
@@ -119,12 +118,9 @@ app.get("/api/rekap-pdf", (req, res) => {
             doc.moveDown(2);
         }
         
-        // ===== NAMA MADRASAH =====
         doc.fontSize(14).font('Helvetica-Bold');
         doc.text('MI HIDAYATUL MUBTADIEN', { align: 'center' });
         doc.moveDown(0.5);
-        
-        // ===== JUDUL LAPORAN =====
         doc.fontSize(12).font('Helvetica');
         doc.text('LAPORAN SETORAN SISWA', { align: 'center' });
         doc.moveDown(0.5);
@@ -132,7 +128,6 @@ app.get("/api/rekap-pdf", (req, res) => {
         doc.text(`${new Date(today).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, { align: 'center' });
         doc.moveDown(1.5);
         
-        // ===== HITUNG BARIS PER HALAMAN =====
         const maxRowsPerPage = 25;
         let rowCounter = 0;
         let currentPage = 1;
@@ -140,7 +135,6 @@ app.get("/api/rekap-pdf", (req, res) => {
         function drawTableHeader(y) {
             const colPos = [40, 100, 220, 350, 450];
             const headers = ['No', 'Nama', 'Surah', 'Ayat', 'Keterangan'];
-            
             doc.rect(35, y - 3, 530, 20).fill('#e8e8e8');
             doc.fillColor('#000000');
             doc.fontSize(9).font('Helvetica-Bold');
@@ -185,7 +179,7 @@ app.get("/api/rekap-pdf", (req, res) => {
     });
 });
 
-// ============ FITUR PDF REKAP PER BULAN (FITUR BARU) ============
+// ============ FITUR PDF REKAP PER BULAN ============
 app.get("/api/rekap-bulan-pdf/:tahun/:bulan", (req, res) => {
     const tahun = req.params.tahun;
     const bulan = req.params.bulan;
@@ -210,7 +204,6 @@ app.get("/api/rekap-bulan-pdf/:tahun/:bulan", (req, res) => {
         res.setHeader("Content-Disposition", `inline; filename=rekap_bulan_${tahun}_${bulan}.pdf`);
         doc.pipe(res);
         
-        // Logo
         const logoPath = path.join(__dirname, 'public', 'images', 'logo.png');
         if (fs.existsSync(logoPath)) {
             const pageWidth = doc.page.width;
@@ -232,7 +225,6 @@ app.get("/api/rekap-bulan-pdf/:tahun/:bulan", (req, res) => {
         doc.text(`Bulan: ${namaBulan} ${tahun}`, { align: 'center' });
         doc.moveDown(1.5);
         
-        // Header tabel
         const colPos = [40, 100, 200, 300, 400, 480];
         const headers = ['No', 'Nama', 'Surah', 'Ayat', 'Tgl', 'Ket'];
         
@@ -257,7 +249,6 @@ app.get("/api/rekap-bulan-pdf/:tahun/:bulan", (req, res) => {
                 rowCounter = 0;
                 currentPage++;
                 
-                // Redraw header
                 doc.rect(35, y - 3, 530, 20).fill('#e8e8e8');
                 doc.fillColor('#000000');
                 doc.fontSize(8).font('Helvetica-Bold');
@@ -297,7 +288,7 @@ app.get("/api/rekap-bulan-pdf/:tahun/:bulan", (req, res) => {
     });
 });
 
-// ============ HAPUS REKAPAN PER BULAN (FITUR BARU) ============
+// ============ HAPUS REKAPAN PER BULAN ============
 app.delete("/api/hapus-rekapan-bulan/:tahun/:bulan", (req, res) => {
     const tahun = req.params.tahun;
     const bulan = req.params.bulan;
@@ -309,7 +300,7 @@ app.delete("/api/hapus-rekapan-bulan/:tahun/:bulan", (req, res) => {
         if (err) {
             return res.status(500).json({ message: "Gagal menghapus rekapan" });
         }
-        res.json({ message: `Berhasil menghapus ${result.affectedRows} data setoran bulan ${bulan}/${tahun}` });
+        res.json({ message: `Berhasil menghapus ${result.affectedRows} data setoran ${bulan}/${tahun}` });
     });
 });
 
@@ -320,34 +311,6 @@ const initDB = () => {
     console.log("Database siap!");
 };
 initDB();
-
-// Tabel otomatis (tetap dipertahankan)
-db.query(`
-    CREATE TABLE IF NOT EXISTS data_santri (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nama_santri VARCHAR(255),
-        nomor_wa_orangtua VARCHAR(20)
-    )
-`, (err) => {
-    if (err) console.error('Gagal buat tabel santri:', err);
-    else console.log('✅ Tabel data_santri siap');
-});
-
-db.query(`
-    CREATE TABLE IF NOT EXISTS setoran (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nama VARCHAR(255),
-        nomor_wa VARCHAR(20),
-        surah VARCHAR(100),
-        ayat VARCHAR(50),
-        nilai INT,
-        keterangan TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-`, (err) => {
-    if (err) console.error('Gagal buat tabel setoran:', err);
-    else console.log('✅ Tabel setoran siap');
-});
 
 // --- PENTING: TARUH PALING BAWAH ---
 app.get('*', (req, res) => {
