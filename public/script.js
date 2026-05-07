@@ -170,7 +170,7 @@ function inisialisasiApp() {
     function bukaEditModal(id, nama, nomorWa) {
         editIdSantri      = id;
         editNama.value    = nama;
-        editNomorWa.value = nomorWa;
+        editNomorWa.value = nomorWa || "";
         modal.style.display = "flex";
     }
 
@@ -195,7 +195,7 @@ function inisialisasiApp() {
             }
             try {
                 btnSimpanEdit.disabled = true;
-                btnSimpanEdit.textContent = "⏳ Menyimpan...";
+                btnSimpanEdit.innerHTML = "⏳ Menyimpan...";
 
                 const res = await fetch(`${BASE_URL}/api/santri/${editIdSantri}`, {
                     method: "PUT",
@@ -241,14 +241,14 @@ function inisialisasiApp() {
                         const row = tbody.insertRow();
                         row.insertCell(0).textContent = s.id;
                         row.insertCell(1).textContent = s.nama_santri;
-                        row.insertCell(2).textContent = s.nomor_wa_orangtua;
+                        row.insertCell(2).textContent = s.nomor_wa_orangtua || '-';
 
                         const btnCell = row.insertCell(3);
 
                         const editBtn = document.createElement("button");
                         editBtn.innerHTML = "✏️ Edit";
                         editBtn.className = "btn btn-amber btn-sm";
-                        editBtn.onclick = () => bukaEditModal(s.id, s.nama_santri, s.nomor_wa_orangtua);
+                        editBtn.onclick = () => bukaEditModal(s.id, s.nama_santri, s.nomor_wa_orangtua || '');
                         btnCell.appendChild(editBtn);
 
                         btnCell.appendChild(document.createTextNode(" "));
@@ -269,7 +269,8 @@ function inisialisasiApp() {
                 data.forEach(s => {
                     const opt = document.createElement("option");
                     opt.value = s.nama_santri;
-                    opt.setAttribute("data-nomor", s.nomor_wa_orangtua);
+                    // Simpan nomor WA, string kosong jika null/undefined
+                    opt.setAttribute("data-nomor", s.nomor_wa_orangtua || "");
                     opt.textContent = s.nama_santri;
                     selectPilih.appendChild(opt);
                 });
@@ -322,14 +323,15 @@ function inisialisasiApp() {
             const nama = document.getElementById("namaSantriBaru").value.trim();
             const wa   = document.getElementById("nomorWaBaru").value.trim();
 
-            if (!nama || !wa) {
-                alert("Isi semua field!");
+            // Hanya nama yang wajib, WA boleh kosong
+            if (!nama) {
+                alert("Nama santri tidak boleh kosong!");
                 return;
             }
 
             try {
                 tambahBtn.disabled = true;
-                tambahBtn.textContent = "⏳ Menyimpan...";
+                tambahBtn.innerHTML = "⏳ Menyimpan...";
 
                 const res = await fetch(`${BASE_URL}/api/santri`, {
                     method: "POST",
@@ -340,6 +342,7 @@ function inisialisasiApp() {
                         sekolah_id: SEKOLAH_ID
                     })
                 });
+
                 const data = await res.json();
 
                 if (res.ok) {
@@ -351,6 +354,7 @@ function inisialisasiApp() {
                     alert("Gagal: " + (data.message || "Error server"));
                 }
             } catch (err) {
+                console.error("tambahSantri error:", err);
                 alert("Gagal terhubung ke server.");
             } finally {
                 tambahBtn.disabled = false;
@@ -403,9 +407,14 @@ function inisialisasiApp() {
     async function hapusSetoran(id) {
         if (!confirm("Hapus setoran ini?")) return;
         try {
-            await fetch(`${BASE_URL}/api/setoran/${id}?sekolah_id=${SEKOLAH_ID}`, {
+            const res = await fetch(`${BASE_URL}/api/setoran/${id}?sekolah_id=${SEKOLAH_ID}`, {
                 method: "DELETE"
             });
+            const data = await res.json();
+            if (!res.ok) {
+                alert("Gagal hapus: " + (data.message || "Error server"));
+                return;
+            }
         } catch (err) {
             alert("Gagal terhubung ke server.");
         }
@@ -437,7 +446,6 @@ function inisialisasiApp() {
             const nilaiRaw = document.getElementById("nilai").value.trim();
 
             if (!nama)     return alert("Pilih santri terlebih dahulu!");
-            if (!wa)       return alert("Santri tidak memiliki nomor WA. Edit data santri dulu.");
             if (!surah)    return alert("Pilih surah terlebih dahulu!");
             if (!ayat)     return alert("Isi ayat terlebih dahulu!");
             if (!nilaiRaw) return alert("Isi nilai terlebih dahulu!");
@@ -451,7 +459,7 @@ function inisialisasiApp() {
 
             try {
                 saveBtn.disabled = true;
-                saveBtn.textContent = "⏳ Menyimpan...";
+                saveBtn.innerHTML = "⏳ Menyimpan...";
 
                 const res = await fetch(`${BASE_URL}/api/setoran`, {
                     method: "POST",
@@ -470,10 +478,13 @@ function inisialisasiApp() {
                 const data = await res.json();
 
                 if (res.ok) {
-                    const pesan = `📚 *LAPORAN SETORAN QURAN*\n\nNama    : ${nama}\nSurah   : ${surah}\nAyat    : ${ayat}\nNilai   : ${nilaiInt}\nKet     : ${keterangan}\n\nBarakallahu fiikum 🌙`;
-                    window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, "_blank");
+                    // Kirim WA hanya jika nomor tersedia
+                    if (wa) {
+                        const pesan = `📚 *LAPORAN SETORAN QURAN*\n\nNama    : ${nama}\nSurah   : ${surah}\nAyat    : ${ayat}\nNilai   : ${nilaiInt}\nKet     : ${keterangan}\n\nBarakallahu fiikum 🌙`;
+                        window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, "_blank");
+                    }
 
-                    alert("✓ Data setoran berhasil disimpan!");
+                    alert("✓ Data setoran berhasil disimpan!" + (wa ? "" : "\n(Nomor WA tidak tersedia, pesan tidak dikirim)"));
 
                     select.value = "";
                     document.getElementById("surah").value = "";
@@ -486,6 +497,7 @@ function inisialisasiApp() {
                     alert("Gagal menyimpan: " + (data.message || "Error server"));
                 }
             } catch (err) {
+                console.error("saveSetoran error:", err);
                 alert("Gagal terhubung ke server.");
             } finally {
                 saveBtn.disabled = false;
@@ -500,7 +512,7 @@ function inisialisasiApp() {
         pdfHarianBtn.onclick = async () => {
             try {
                 pdfHarianBtn.disabled = true;
-                pdfHarianBtn.textContent = "⏳ Membuat PDF...";
+                pdfHarianBtn.innerHTML = "⏳ Membuat PDF...";
 
                 const res = await fetch(`${BASE_URL}/api/rekap-pdf?sekolah_id=${SEKOLAH_ID}`);
                 if (res.ok) {
