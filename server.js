@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./db");
 const PDFDocument = require('pdfkit');
+const fs = require('fs');
 const path = require('path');
 const app = express();
 
@@ -26,22 +27,20 @@ app.post("/api/santri", (req, res) => {
         res.json({ message: "Sukses" });
     });
 });
+
 // ============ HAPUS SANTRI ============
 app.delete("/api/santri/:id", (req, res) => {
     const id = req.params.id;
     
-    // Cari nama santri dulu biar setorannya juga bisa dihapus
     db.query("SELECT nama_santri FROM data_santri WHERE id = ?", [id], (err, rows) => {
         if (err) return res.status(500).json({ message: "Gagal cari santri" });
         if (rows.length === 0) return res.status(404).json({ message: "Santri tidak ditemukan" });
         
         const namaSantri = rows[0].nama_santri;
         
-        // Hapus semua setoran santri
         db.query("DELETE FROM setoran WHERE nama = ?", [namaSantri], (err) => {
             if (err) console.error("Gagal hapus setoran:", err);
             
-            // Hapus santri
             db.query("DELETE FROM data_santri WHERE id = ?", [id], (err) => {
                 if (err) return res.status(500).json({ message: "Gagal hapus santri" });
                 res.json({ message: "Santri dan semua setorannya berhasil dihapus" });
@@ -49,6 +48,7 @@ app.delete("/api/santri/:id", (req, res) => {
         });
     });
 });
+
 // ============ API SETORAN ============
 app.post("/api/setoran", (req, res) => {
     const { nama_santri, nomor_wa_orangtua, surah, ayat, nilai, keterangan } = req.body;
@@ -86,10 +86,8 @@ app.delete("/api/dashboard/hapus/:nama", (req, res) => {
         res.json({ message: "Berhasil hapus semua setoran" });
     });
 });
-// ============ FITUR PDF ============
-const fs = require('fs');
-const path = require('path');
 
+// ============ FITUR PDF REKAP HARIAN ============
 app.get("/api/rekap-pdf", (req, res) => {
     const today = new Date().toISOString().split('T')[0];
     
@@ -139,7 +137,6 @@ app.get("/api/rekap-pdf", (req, res) => {
         const colPos = [40, 100, 220, 350, 450];
         const headers = ['No', 'Nama', 'Surah', 'Ayat', 'Keterangan'];
         
-        // Header tabel (background abu-abu)
         doc.rect(35, startY - 3, 530, 20).fill('#e8e8e8');
         doc.fillColor('#000000');
         doc.fontSize(9).font('Helvetica-Bold');
@@ -147,10 +144,8 @@ app.get("/api/rekap-pdf", (req, res) => {
             doc.text(header, colPos[i], startY);
         });
         
-        // Garis bawah header
         doc.moveTo(35, startY + 17).lineTo(565, startY + 17).lineWidth(0.5).stroke();
         
-        // ===== ISI TABEL =====
         let y = startY + 25;
         doc.fontSize(9).font('Helvetica');
         
@@ -160,13 +155,7 @@ app.get("/api/rekap-pdf", (req, res) => {
                 y = 50;
             }
             
-            // Konversi nilai ke keterangan dengan KKM 85
-            let keterangan = '';
-            if (row.nilai >= 85) {
-                keterangan = '✅ Lancar';
-            } else {
-                keterangan = '⚠️ Kurang Lancar';
-            }
+            let keterangan = row.nilai >= 85 ? '✅ Lancar' : '⚠️ Kurang Lancar';
             
             doc.text((index + 1).toString(), colPos[0], y);
             doc.text(row.nama || '-', colPos[1], y, { width: 110 });
@@ -177,10 +166,8 @@ app.get("/api/rekap-pdf", (req, res) => {
             y += 22;
         });
         
-        // ===== GARIS PENUTUP =====
         doc.moveTo(35, y + 2).lineTo(565, y + 2).stroke();
         
-        // ===== FOOTER =====
         const pageHeight = doc.page.height;
         doc.fontSize(8).font('Helvetica');
         doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 35, pageHeight - 40);
@@ -189,6 +176,7 @@ app.get("/api/rekap-pdf", (req, res) => {
         doc.end();
     });
 });
+
 // ============ DATABASE INIT ============
 const initDB = () => {
     db.query(`CREATE TABLE IF NOT EXISTS data_santri (id INT AUTO_INCREMENT PRIMARY KEY, nama_santri VARCHAR(255), nomor_wa_orangtua VARCHAR(20))`);
@@ -200,33 +188,6 @@ initDB();
 // --- PENTING: TARUH PALING BAWAH ---
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-// Setelah db terkoneksi, buat tabel otomatis
-db.query(`
-    CREATE TABLE IF NOT EXISTS data_santri (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nama_santri VARCHAR(255),
-        nomor_wa_orangtua VARCHAR(20)
-    )
-`, (err) => {
-    if (err) console.error('Gagal buat tabel santri:', err);
-    else console.log('✅ Tabel data_santri siap');
-});
-
-db.query(`
-    CREATE TABLE IF NOT EXISTS setoran (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nama VARCHAR(255),
-        nomor_wa VARCHAR(20),
-        surah VARCHAR(100),
-        ayat VARCHAR(50),
-        nilai INT,
-        keterangan TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-`, (err) => {
-    if (err) console.error('Gagal buat tabel setoran:', err);
-    else console.log('✅ Tabel setoran siap');
 });
 
 const PORT = process.env.PORT || 3000;
