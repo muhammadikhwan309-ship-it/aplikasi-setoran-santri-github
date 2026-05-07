@@ -26,7 +26,29 @@ app.post("/api/santri", (req, res) => {
         res.json({ message: "Sukses" });
     });
 });
-
+// ============ HAPUS SANTRI ============
+app.delete("/api/santri/:id", (req, res) => {
+    const id = req.params.id;
+    
+    // Cari nama santri dulu biar setorannya juga bisa dihapus
+    db.query("SELECT nama_santri FROM data_santri WHERE id = ?", [id], (err, rows) => {
+        if (err) return res.status(500).json({ message: "Gagal cari santri" });
+        if (rows.length === 0) return res.status(404).json({ message: "Santri tidak ditemukan" });
+        
+        const namaSantri = rows[0].nama_santri;
+        
+        // Hapus semua setoran santri
+        db.query("DELETE FROM setoran WHERE nama = ?", [namaSantri], (err) => {
+            if (err) console.error("Gagal hapus setoran:", err);
+            
+            // Hapus santri
+            db.query("DELETE FROM data_santri WHERE id = ?", [id], (err) => {
+                if (err) return res.status(500).json({ message: "Gagal hapus santri" });
+                res.json({ message: "Santri dan semua setorannya berhasil dihapus" });
+            });
+        });
+    });
+});
 // ============ API SETORAN ============
 app.post("/api/setoran", (req, res) => {
     const { nama_santri, nomor_wa_orangtua, surah, ayat, nilai, keterangan } = req.body;
